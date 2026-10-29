@@ -31,12 +31,6 @@ const SEMESTER_OPTIONS: { value: Term; label: string }[] = [
   { value: 'SUMMER', label: 'Summer Term' },
 ];
 
-/**
- * Screen 02 — Student Setup (`02_Student_Setup.png`)
- *
- * Collects Full Name, Student ID, Current Year Level, and Current Semester,
- * persists locally via Expo SQLite, and advances to Academic Goal.
- */
 export default function StudentSetupScreen() {
   const router = useRouter();
   const { profile, updateStudentSetup } = usePlanner();
@@ -53,7 +47,7 @@ export default function StudentSetupScreen() {
   const semester = semesterOverride ?? profile.currentSemester;
 
   const selectedYearLabel =
-    YEAR_OPTIONS.find((opt) => opt.value === yearLevel)?.label ?? '2nd Year';
+    YEAR_OPTIONS.find((opt) => opt.value === yearLevel)?.label ?? '1st Year';
   const selectedSemesterLabel =
     SEMESTER_OPTIONS.find((opt) => opt.value === semester)?.label ?? '1st Semester';
 
@@ -100,7 +94,7 @@ export default function StudentSetupScreen() {
                   accessibilityLabel="Full Name"
                   value={fullName}
                   onChangeText={setFullName}
-                  placeholder="Juan Dela Cruz"
+                  placeholder="Enter your full name"
                   placeholderTextColor="#8B9890"
                   style={styles.textInput}
                   autoCapitalize="words"
@@ -123,7 +117,7 @@ export default function StudentSetupScreen() {
                   accessibilityLabel="Student ID"
                   value={studentId}
                   onChangeText={setStudentId}
-                  placeholder="2025-0001"
+                  placeholder="e.g., 2025-0001"
                   placeholderTextColor="#8B9890"
                   style={styles.textInput}
                   autoCapitalize="characters"
@@ -238,6 +232,7 @@ export default function StudentSetupScreen() {
           <StickyContinueCard
             caption="Everything is saved only on this device."
             testID="student-setup-continue"
+            disabled={!fullName.trim()}
             onPress={handleContinue}
           />
         </View>

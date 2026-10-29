@@ -1,15 +1,3 @@
-/**
- * CORE ALGORITHM AUDIT — Focused verification tests (see docs/CORE_ALGORITHM_AUDIT.md)
- *
- * These tests verify behaviour against SystemArchitecture.pdf (Sec 3.1, 3.2, 9, 10) and
- * Flow.pdf (Stages 6–12). Reference values for the fuzzy engine are computed INDEPENDENTLY
- * in this file (own membership functions + fine-grained numerical integration) rather than
- * by calling the engine under test.
- *
- * Tests named "KNOWN DEFECT" use `test.failing`: they encode the CORRECT expected behaviour,
- * currently fail, and therefore pass as `failing`. When the defect is fixed, Jest will report
- * them as unexpectedly passing — convert them to normal `test` at that point.
- */
 import { runBackwardChaining } from "@/domain/algorithms/backward-chaining";
 import { validateCurriculumDag } from "@/domain/algorithms/dag-validator";
 import {
@@ -34,7 +22,7 @@ import type {
   YearLevel,
 } from "@/domain/curriculum/types";
 
-// ─────────────────────────── helpers ───────────────────────────
+// Helpers
 
 function mk(
   code: string,
@@ -278,8 +266,6 @@ function checkInvariants(p: Profile) {
   return { plan, v };
 }
 
-// ═════════════════════════════ 1. BACKWARD CHAINING ═════════════════════════════
-
 describe("AUDIT 1 — Backward Chaining", () => {
   test("ANS040 already completed: status COMPLETED, excluded from remaining and from every scheduled semester", () => {
     const completed = [...YEAR12, "ANS040"];
@@ -387,8 +373,6 @@ describe("AUDIT 1 — Backward Chaining", () => {
   });
 });
 
-// ═════════════════════════════ 2. DAG & TOPOLOGICAL SORT ═════════════════════════════
-
 describe("AUDIT 2 — DAG validation & topological ordering", () => {
   test("linear chain A<-B<-C<-D: tiers 0..3, critical path length 4", () => {
     const t = runTopologicalSort([
@@ -467,8 +451,6 @@ describe("AUDIT 2 — DAG validation & topological ordering", () => {
     expect(() => validateCurriculumDag(chain.slice().reverse())).not.toThrow();
   });
 });
-
-// ═════════════════════════════ 3. MAMDANI FIS ═════════════════════════════
 
 describe("AUDIT 3 — Mamdani Fuzzy Inference System", () => {
   test("fuzzification matches hand-calculated membership values", () => {
@@ -608,8 +590,6 @@ describe("AUDIT 3 — Mamdani Fuzzy Inference System", () => {
   });
 });
 
-// ═════════════════════════════ 4. SCHEDULER ═════════════════════════════
-
 describe("AUDIT 4 — Academic Scheduler invariants across 8 student profiles", () => {
   const results = PROFILES.map((p) => ({ p, ...checkInvariants(p) }));
   const collect = (k: keyof ReturnType<typeof checkInvariants>["v"]) =>
@@ -732,8 +712,6 @@ describe("AUDIT 4 — Academic Scheduler invariants across 8 student profiles", 
     expect(scheduled).not.toContain("NST002");
   });
 });
-
-// ═════════════════════════════ 5. END-TO-END INTEGRATION ═════════════════════════════
 
 describe("AUDIT 5 — End-to-End Reactive Pipeline Integration", () => {
   test("updating completedCourses (0 -> Year 1 -> Year 1+2) updates backward chaining, topological sort, and schedule plan", () => {
@@ -867,8 +845,6 @@ describe("AUDIT 5 — End-to-End Reactive Pipeline Integration", () => {
     ).toContain("ANS002");
   });
 });
-
-// ═════════════════════════════ Performance (SystemArchitecture.pdf Sec 10: < 16 ms) ═════════════════════════════
 
 describe("AUDIT — performance benchmark (Node/Jest, not on-device)", () => {
   function bench(fn: () => void, runs = 50) {

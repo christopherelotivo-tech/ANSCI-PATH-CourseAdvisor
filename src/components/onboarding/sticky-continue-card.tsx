@@ -11,10 +11,6 @@ export interface StickyContinueCardProps {
   onPress: () => void;
 }
 
-/**
- * Floating bottom white card with helper caption and dark-green CTA button
- * matching all onboarding prototype screens (`02` through `11`).
- */
 export function StickyContinueCard({
   caption,
   buttonLabel = 'Continue',

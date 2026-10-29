@@ -23,19 +23,13 @@ const TERM_SECTIONS: { term: Term; label: string }[] = [
   { term: 'SUMMER', label: 'Summer Term' },
 ];
 
-/**
- * Screens 04–07 — Completed Courses (`04` through `07_Completed_Courses_*.png`)
- *
- * Implements the 4 year-level tabs in logical order (1st, 2nd, 3rd, and 4th Year),
- * "Complete this year" bulk action, per-semester "Select All" checkboxes, and
- * individual course checkboxes backed by the official Animal Science curriculum.
- */
 export default function CompletedCoursesScreen() {
   const router = useRouter();
   const {
     completedCourses,
     toggleCourseCompleted,
     setCoursesCompletedBulk,
+    clearAllCompletedCourses,
     persistCompletedCourses,
   } = usePlanner();
 
@@ -133,13 +127,27 @@ export default function CompletedCoursesScreen() {
               }`}
             </Text>
 
-            <Pressable
-              accessibilityRole="button"
-              testID="complete-this-year-button"
-              onPress={handleCompleteThisYear}
-              hitSlop={8}>
-              <Text style={styles.completeYearActionText}>Complete this year</Text>
-            </Pressable>
+            <View style={styles.summaryActionsRow}>
+              {totalCompletedCount > 0 && (
+                <Pressable
+                  accessibilityRole="button"
+                  testID="clear-completed-courses-button"
+                  onPress={clearAllCompletedCourses}
+                  hitSlop={8}>
+                  <Text style={styles.clearAllActionText}>Clear all</Text>
+                </Pressable>
+              )}
+
+              <Pressable
+                accessibilityRole="button"
+                testID="complete-this-year-button"
+                onPress={handleCompleteThisYear}
+                hitSlop={8}>
+                <Text style={styles.completeYearActionText}>
+                  {allInYearCompleted ? 'Unselect this year' : 'Complete this year'}
+                </Text>
+              </Pressable>
+            </View>
           </View>
         </View>
 
@@ -295,6 +303,16 @@ const styles = StyleSheet.create({
     fontSize: 12.5,
     fontWeight: '600',
     color: '#465D4F',
+  },
+  summaryActionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  clearAllActionText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#B83228',
   },
   completeYearActionText: {
     fontSize: 12.5,

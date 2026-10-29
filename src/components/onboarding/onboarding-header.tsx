@@ -11,11 +11,9 @@ const ASSS_LOGO = require('@/assets/images/branding/ansci-student-society-logo.p
 export interface OnboardingHeaderProps {
   stepText: string;
   sectionText: string;
-  /** Progress bar fill percentage (0 to 100) */
   progressPercent: number;
   title: string;
   subtitle: string;
-  /** Show the MSU-Naawan CELS and Animal Science Student Society seals */
   showLogos?: boolean;
   onBackPress?: () => void;
 }

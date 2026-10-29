@@ -1,20 +1,3 @@
-/**
- * OFFICIAL CURRICULUM DATA — BS Agriculture major in Animal Science
- * Mindanao State University at Naawan
- *
- * Transcribed from `docs/AnimalScienceCurriculum.pdf` (BOR Resolution No. 197-L, S. 2024,
- * effectivity SY 2025-2026, ref. CMO No. 23 Series of 2021).
- *
- * RULES FOR EDITING THIS FILE
- * - Values must match the source PDF exactly. Do not "fix" data by guessing.
- * - Source problems are preserved and flagged in `notes`, and listed in
- *   `planning/PROJECT_PLAN.md` → "Missing / conflicting academic requirements".
- * - `src/domain/curriculum/__tests__/curriculum-data-test.ts` checks every printed
- *   semester total and the grand total against this file.
- *
- * Difficulty ratings (1-10) and subject-area mappings are NOT part of the source
- * curriculum and are therefore intentionally absent here.
- */
 import type { Curriculum, CurriculumCourse, StandingRequirement, Term, YearLevel } from './types';
 
 interface CourseInput {
@@ -100,7 +83,7 @@ const AGF_NOTE =
   'AGF101/AGF102 are printed in RED in the official PDF and do not appear anywhere else in the curriculum. Unresolved — requires confirmation from the department.';
 
 const courses: CurriculumCourse[] = [
-  // ───────── First Year, First Semester (printed total: 23) ─────────
+  // 1st Year, 1st Semester
   course(1, 'FIRST', 'GEC101', 'Understanding the Self', { units: 3, lec: 3, lab: 0 }),
   course(1, 'FIRST', 'GEC102', 'Purposive Communication', { units: 3, lec: 3, lab: 0 }),
   course(1, 'FIRST', 'CHM033', 'Organic Chemistry', { units: 2, lec: 2, lab: 0, co: ['CHM033.1'] }),
@@ -124,7 +107,7 @@ const courses: CurriculumCourse[] = [
     notes: [NSTP_NOTE],
   }),
 
-  // ───────── First Year, Second Semester (printed total: 23) ─────────
+  // 1st Year, 2nd Semester
   course(1, 'SECOND', 'GEC103', 'The Contemporary World', { units: 3, lec: 3, lab: 0 }),
   course(1, 'SECOND', 'GEC104', 'Mathematics in the Modern World', { units: 3, lec: 3, lab: 0 }),
   course(1, 'SECOND', 'ANS001', 'Introduction to Animal Science', { units: 3, lec: 2, lab: 3 }),
@@ -156,7 +139,7 @@ const courses: CurriculumCourse[] = [
     notes: [NSTP_NOTE],
   }),
 
-  // ───────── First Year, Summer (printed total: 3) ─────────
+  // 1st Year, Summer
   course(1, 'SUMMER', 'ANS097', 'Practicum skills and Development in Animal Science (In-Campus)', {
     units: 3,
     lec: null,
@@ -165,7 +148,7 @@ const courses: CurriculumCourse[] = [
     pre: ['CRS001', 'CRS002', 'SSC001', 'SSC002', 'CRP001', 'ANS001'],
   }),
 
-  // ───────── Second Year, First Semester (printed total: 23) ─────────
+  // 2nd Year, 1st Semester
   course(2, 'FIRST', 'CHM043', 'General Biochemistry', {
     units: 2,
     lec: 2,
@@ -218,7 +201,7 @@ const courses: CurriculumCourse[] = [
     { units: 2, lec: 2, lab: 0, pre: ['PED012'] }
   ),
 
-  // ───────── Second Year, Second Semester (printed total: 23) ─────────
+  // 2nd Year, 2nd Semester
   course(2, 'SECOND', 'GEC106', 'Art Appreciation', { units: 3, lec: 3, lab: 0 }),
   course(2, 'SECOND', 'GEC107', 'Ethics', { units: 3, lec: 3, lab: 0 }),
   course(2, 'SECOND', 'AEX001', 'Principles of Agricultural Extension and Communication', {
@@ -252,7 +235,7 @@ const courses: CurriculumCourse[] = [
     pre: ['PED012'],
   }),
 
-  // ───────── Third Year, First Semester (printed total: 22) ─────────
+  // 3rd Year, 1st Semester
   course(3, 'FIRST', 'AGR005', 'General Physiology and Toxicology', { units: 3, lec: 2, lab: 3, pre: ['CRP002'] }),
   course(3, 'FIRST', 'ABT001', 'Agricultural Biotechnology', { units: 3, lec: 2, lab: 3, pre: ['GEN001'] }),
   course(3, 'FIRST', 'CRS003', 'Post-Harvest Handling & Seed Technology', {
@@ -281,7 +264,7 @@ const courses: CurriculumCourse[] = [
   course(3, 'FIRST', 'GEC133', 'Living in the IT Era', { units: 3, lec: 2, lab: 3, pre: ['CRS002'] }),
   course(3, 'FIRST', 'ANS191', 'Seminar A', { units: 1, lec: 1, lab: 0, standing: ['CAS'] }),
 
-  // ───────── Third Year, Second Semester (printed total: 20) ─────────
+  // 3rd Year, 2nd Semester
   course(3, 'SECOND', 'HAL101', 'Fundamentals of Halal', { units: 3, lec: 3, lab: 0 }),
   course(3, 'SECOND', 'AGR006', 'Beneficial Arthropods and Micro-organisms', {
     units: 3,
@@ -324,7 +307,7 @@ const courses: CurriculumCourse[] = [
     standing: ['CAS'],
   }),
 
-  // ───────── Third Year, Summer (printed total: 3) ─────────
+  // 3rd Year, Summer
   course(3, 'SUMMER', 'ANS197', 'On-the-Job Training (Off-Campus)', {
     units: 3,
     lec: null,
@@ -333,7 +316,7 @@ const courses: CurriculumCourse[] = [
     pre: ['ANS003', 'ANS040', 'ANS041', 'ANS042', 'ANS043', 'ANS044'],
   }),
 
-  // ───────── Fourth Year, First Semester (printed total: 20) ─────────
+  // 4th Year, 1st Semester
   course(4, 'FIRST', 'GEC123', 'Gender and Society', { units: 3, lec: 3, lab: 0 }),
   course(4, 'FIRST', 'AGR007', 'Principles and Practices of Halal Agriculture', {
     units: 3,
@@ -353,7 +336,7 @@ const courses: CurriculumCourse[] = [
   }),
   smcSlot(4, 'FIRST', 'SMC-1'),
 
-  // ───────── Fourth Year, Second Semester (printed total: 18) ─────────
+  // 4th Year, 2nd Semester
   course(4, 'SECOND', 'GEC131', 'People and Earth’s Ecosystem', { units: 3, lec: 3, lab: 0 }),
   course(4, 'SECOND', 'AEX002', 'Introduction to Agricultural Policy and Development', {
     units: 3,
@@ -374,7 +357,7 @@ const courses: CurriculumCourse[] = [
   smcSlot(4, 'SECOND', 'SMC-2'),
   smcSlot(4, 'SECOND', 'SMC-3'),
 
-  // ───────── Specialized Major Courses (minimum 3 courses / 9 units) ─────────
+  // Specialized Major Courses
   smcOption('ANS141', 'Poultry Production', ['ANS041', 'ANS042', 'ANS043']),
   smcOption('ANS142', 'Goat and Sheep Production', ['ANS041', 'ANS042', 'ANS043', 'ANS044']),
   smcOption('ANS143', 'Swine Production', ['ANS002']),

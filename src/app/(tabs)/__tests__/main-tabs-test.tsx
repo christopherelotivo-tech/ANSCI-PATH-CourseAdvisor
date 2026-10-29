@@ -5,6 +5,10 @@ import CoursesCatalogScreen from '@/app/(tabs)/courses';
 import GoalPathGraphScreen from '@/app/(tabs)/graph';
 import PlanRoadmapScreen from '@/app/(tabs)/plan';
 import SettingsScreen from '@/app/(tabs)/settings';
+import {
+  PROTOTYPE_CONFIDENCE_RATINGS,
+  PROTOTYPE_STUDENT_PROFILE,
+} from '@/db/repository';
 import { PlannerProvider } from '@/state/planner-context';
 
 const mockPush = jest.fn();
@@ -28,7 +32,13 @@ jest.mock('@/db/database', () => ({
 }));
 
 function renderWithProvider(ui: React.ReactElement) {
-  return render(<PlannerProvider>{ui}</PlannerProvider>);
+  return render(
+    <PlannerProvider
+      initialProfile={PROTOTYPE_STUDENT_PROFILE}
+      initialConfidenceRatings={PROTOTYPE_CONFIDENCE_RATINGS}>
+      {ui}
+    </PlannerProvider>
+  );
 }
 
 jest.setTimeout(20000);
@@ -57,7 +67,6 @@ describe('Milestone 5 — Main Application Tabs (Screens 12 to 15)', () => {
       getByText('56% projected stress · 15-unit recommended limit')
     ).toBeTruthy();
 
-    // Verify Dashboard quick shortcuts row (Flow.pdf Step 14)
     expect(getByTestId('dashboard-shortcuts-row')).toBeTruthy();
     expect(getByTestId('dashboard-shortcut-courses')).toBeTruthy();
     expect(getByTestId('dashboard-shortcut-graph')).toBeTruthy();
@@ -72,7 +81,7 @@ describe('Milestone 5 — Main Application Tabs (Screens 12 to 15)', () => {
     expect(getByText('Show fewer courses')).toBeTruthy();
   });
 
-  test('13_Courses_Catalog supports search, filter tabs, unresolved AGF101 notice, and marking a course completed', async () => {
+  test('Courses Catalog supports search, filter tabs, unresolved AGF101 notice, and marking a course completed', async () => {
     const { getByText, getByTestId } = await renderWithProvider(
       <CoursesCatalogScreen />
     );

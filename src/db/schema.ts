@@ -1,11 +1,3 @@
-/**
- * SQLite Relational Schema for CourseAdvisor / AnSciPath.
- *
- * Implements the Local Storage Engine specification from `docs/SystemArchitecture.pdf`
- * (Adjacency List & Junction Table structure for prerequisite DAG lookups + local
- * student profile, completed courses, confidence ratings, and generated schedule).
- */
-
 export const DATABASE_NAME = "courseadvisor.db";
 export const DATABASE_VERSION = 1;
 

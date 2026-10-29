@@ -1,17 +1,3 @@
-/**
- * Academic Schedule & Multi-Semester Roadmap Generator
- *
- * Implements Section 3.3 & Section 9 of `docs/SystemArchitecture.pdf` and Stages 11–12 of `docs/Flow.pdf`:
- * - Selects eligible courses for the student's next semester and subsequent roadmap terms.
- * - Strictly respects:
- *   1. Completed courses (never recommends an already-completed course)
- *   2. Prerequisite satisfaction & Kahn's topological tier ordering
- *   3. Lecture + Laboratory corequisite pairing (e.g., CHM033 + CHM033.1, CHM043 + CHM043.1)
- *   4. Semester availability (`FIRST`, `SECOND`, `SUMMER`)
- *   5. Mamdani Fuzzy Inference System recommended credit limit (`12–18` units for next term)
- * - Generates a transparent human-readable placement explanation (`reason`) for every course.
- */
-
 import type {
   ConfidenceArea,
   Curriculum,
@@ -36,15 +22,10 @@ export interface ScheduledCourseItem {
   course: CurriculumCourse;
   tier: number;
   subjectArea: ConfidenceArea;
-  /** Baseline course difficulty score (1-10) */
   difficultyScore: number;
-  /** Mamdani per-course stress score (0-100%) */
   courseStressScore: number;
-  /** Human-readable per-course stress label ('Low' | 'Moderate' | 'High' | 'Very High') */
   courseStressLabel: StressLevelLabel;
-  /** Human-readable explanation of why this course was placed in this semester */
   reason: string;
-  /** Downstream courses unlocked by completing this course */
   unlocksCourseCodes: string[];
 }
 
@@ -52,9 +33,7 @@ export interface SemesterSchedulePlan {
   semesterIndex: number;
   year: YearLevel;
   term: Term;
-  /** Formatted label, e.g. '2nd Year · 1st Semester' */
   semesterTitle: string;
-  /** Short badge label, e.g. 'Next Semester' for index 1 */
   badgeLabel: string;
   recommendedUnitLimit: number;
   totalUnits: number;
@@ -63,29 +42,17 @@ export interface SemesterSchedulePlan {
 }
 
 export interface GeneratedAcademicPlan {
-  /** True if the curriculum graph is a valid DAG with 0 circular prerequisite loops */
   isValidDag: boolean;
-  /** Detected circular prerequisite paths (empty when `isValidDag === true`) */
   cycles: string[][];
-  /** Fuzzy workload analysis for the immediate next semester */
   workloadAnalysis: FuzzyWorkloadResult;
-  /** Immediate next semester recommendation shown on Screen 11 (`11_Recommended_Schedule.png`) */
   nextSemester: SemesterSchedulePlan;
-  /** Full sequence of remaining semesters to graduation shown on Screen 12 (`12_Your_Plan_Roadmap.png`) */
   semesters: SemesterSchedulePlan[];
-  /** Number of regular semesters remaining to graduation */
   semestersToGraduation: number;
-  /** Overall degree credit completion percentage (0-100) */
   completionPercentage: number;
-  /** Total completed credit units */
   completedUnits: number;
-  /** Total required degree credit units (178) */
   totalDegreeUnits: number;
-  /** True when remaining semesters fit within the student's selected target timeline */
   isOnTrack: boolean;
-  /** Minimum prerequisite chain depth (number of topological tiers) */
   criticalPathLength: number;
-  /** Human-readable explanation when an Extended Term is required per SystemArchitecture.pdf Section 9 */
   extendedTermReason: string | null;
 }
 
@@ -94,7 +61,6 @@ export interface ScheduleGeneratorOptions {
   currentSemester?: Term;
   targetTimelineYears?: 4 | 5 | 6;
   confidenceRatings: Record<ConfidenceArea, number>;
-  /** Optional explicit credit limit override */
   overrideCreditLimit?: number;
 }
 
@@ -128,11 +94,6 @@ export function formatSemesterTitle(year: YearLevel, term: Term): string {
   return `${YEAR_NUMBER_TO_LABEL[year]} · ${TERM_TO_LABEL[term]}`;
 }
 
-/**
- * Determines the starting (year, term) slot for the student's next semester.
- * If all credit-bearing courses in the student's nominal (year, term) are already completed,
- * advances to the earliest curriculum slot that still has uncompleted eligible courses.
- */
 export function resolveNextSemesterSlot(
   curriculum: Curriculum,
   completedSet: ReadonlySet<string>,
@@ -147,7 +108,6 @@ export function resolveNextSemesterSlot(
   );
   const startIdx = requestedIndex >= 0 ? requestedIndex : 0;
 
-  // Check if the requested slot still has uncompleted credit-bearing courses
   const hasRemainingInSlot = (year: YearLevel, term: Term) =>
     curriculum.courses.some(
       (c) =>
@@ -162,7 +122,6 @@ export function resolveNextSemesterSlot(
     return { year: requestedYear, term: requestedTerm, slotIndex: startIdx };
   }
 
-  // Advance forward from startIdx to find the next slot with uncompleted courses
   for (let i = startIdx + 1; i < ORDERED_CURRICULUM_SLOTS.length; i++) {
     const slot = ORDERED_CURRICULUM_SLOTS[i];
     if (hasRemainingInSlot(slot.year, slot.term)) {
@@ -170,7 +129,6 @@ export function resolveNextSemesterSlot(
     }
   }
 
-  // Fallback: check any earlier slot with uncompleted courses
   for (let i = 0; i < startIdx; i++) {
     const slot = ORDERED_CURRICULUM_SLOTS[i];
     if (hasRemainingInSlot(slot.year, slot.term)) {
@@ -185,10 +143,6 @@ export function resolveNextSemesterSlot(
   };
 }
 
-/**
- * Finds a companion lecture/lab course that should be co-scheduled in the same semester
- * (e.g., CHM033 <-> CHM033.1, CHM043 <-> CHM043.1).
- */
 function findPairedLabOrLectureCode(
   course: CurriculumCourse,
   eligibleMap: ReadonlyMap<string, CurriculumCourse>
@@ -209,9 +163,6 @@ function findPairedLabOrLectureCode(
   return null;
 }
 
-/**
- * Builds a transparent human-readable placement explanation for a scheduled course.
- */
 function buildPlacementReason(
   course: CurriculumCourse,
   satisfiedPrerequisites: string[],
@@ -242,10 +193,6 @@ function buildPlacementReason(
   return `${parts.join(' · ')}.`;
 }
 
-/**
- * Selects eligible courses for a single semester up to `creditLimit`, preserving
- * curriculum table priority, topological order, and lecture/lab corequisite pairing.
- */
 function selectCoursesForSemester(
   curriculum: Curriculum,
   completedSet: ReadonlySet<string>,
@@ -262,21 +209,14 @@ function selectCoursesForSemester(
     curriculumIndexMap.set(c.code, idx);
   });
 
-  // Eligible credit-bearing courses
   const eligibleCreditCourses = backward.eligibleNowCourses.filter(
     (c) => c.creditBearing && c.units > 0
   );
 
-  // Strictly respect semester offering availability (FIRST, SECOND, SUMMER)
   const candidates = eligibleCreditCourses.filter(
     (c) => !c.term || c.term === targetTerm
   );
 
-  // Sort candidates by:
-  // 1. Exact match with target (year, term) first
-  // 2. Catch-up courses from earlier years (course.year < targetYear)
-  // 3. Matching term offering (FIRST vs SECOND)
-  // 4. Curriculum table definition order (preserves official syllabus grouping)
   const prioritized = [...candidates].sort((a, b) => {
     const aExactSlot = a.year === targetYear && a.term === targetTerm ? 0 : 1;
     const bExactSlot = b.year === targetYear && b.term === targetTerm ? 0 : 1;
@@ -315,7 +255,6 @@ function selectCoursesForSemester(
       continue;
     }
 
-    // Ensure all known corequisites are either completed, already selected, or eligible now
     const hasUnsatisfiedCoreq = course.corequisites.some(
       (coCode) =>
         curriculumIndexMap.has(coCode) &&
@@ -327,7 +266,6 @@ function selectCoursesForSemester(
       continue;
     }
 
-    // Ensure SMC slots are only scheduled when at least one Specialized Major option is eligible
     if (course.kind === 'SMC_SLOT' && smcOptions.length > 0) {
       const anyOptionEligible = smcOptions.some((opt) =>
         opt.prerequisites
@@ -407,10 +345,6 @@ function selectCoursesForSemester(
   return selected;
 }
 
-/**
- * Generates the student's Next-Semester Recommended Schedule and full Multi-Semester Roadmap
- * using Backward Chaining, Topological Sorting, and Mamdani Fuzzy Workload Analysis.
- */
 export function generateAcademicSchedulePlan(
   curriculum: Curriculum,
   completedCourseCodesInput: Iterable<string>,
@@ -418,7 +352,6 @@ export function generateAcademicSchedulePlan(
 ): GeneratedAcademicPlan {
   const completedSet = new Set(completedCourseCodesInput);
 
-  // Calculate overall degree completion percentage
   const degreeCourses = curriculum.courses.filter(
     (c) => (c.kind === 'REGULAR' || c.kind === 'SMC_SLOT') && c.creditBearing
   );
@@ -432,7 +365,6 @@ export function generateAcademicSchedulePlan(
     Math.round((completedUnits / totalDegreeUnits) * 100)
   );
 
-  // Step 1: Identify starting (year, term) slot
   const nextSlot = resolveNextSemesterSlot(
     curriculum,
     completedSet,
@@ -440,7 +372,6 @@ export function generateAcademicSchedulePlan(
     options.currentSemester ?? 'FIRST'
   );
 
-  // Step 2: Gather candidate courses for the next semester to feed Mamdani Fuzzy Engine
   const backwardInitial = runBackwardChaining(curriculum, completedSet);
   const slotCandidates = backwardInitial.remainingRequiredCourses.filter(
     (c) => c.creditBearing && c.year === nextSlot.year && c.term === nextSlot.term
@@ -459,7 +390,6 @@ export function generateAcademicSchedulePlan(
     options.overrideCreditLimit ??
     (nextSlot.term === 'SUMMER' ? 3 : workloadAnalysis.recommendedUnits);
 
-  // Step 3: Build the immediate Next Semester schedule (`11_Recommended_Schedule.png`)
   const nextSemesterCourses = selectCoursesForSemester(
     curriculum,
     completedSet,
@@ -485,12 +415,10 @@ export function generateAcademicSchedulePlan(
     courses: nextSemesterCourses,
   };
 
-  // Step 4: Simulate full multi-semester roadmap until all degree-required courses are planned
   const simulatedCompleted = new Set(completedSet);
   for (const item of nextSemesterCourses) {
     simulatedCompleted.add(item.course.code);
   }
-  // Also mark non-credit NSTP courses in completed slots if applicable
   for (const c of curriculum.courses) {
     if (!c.creditBearing && c.year === nextSlot.year && c.term === nextSlot.term) {
       simulatedCompleted.add(c.code);
@@ -518,7 +446,6 @@ export function generateAcademicSchedulePlan(
       (c) => c.term === 'SUMMER' && c.creditBearing && c.units > 0
     );
 
-    // Advance calendar slot: FIRST -> SECOND -> (SUMMER if eligible) -> next year FIRST
     if (currentSlotTerm === 'FIRST') {
       currentSlotTerm = 'SECOND';
     } else if (currentSlotTerm === 'SECOND') {
@@ -577,7 +504,6 @@ export function generateAcademicSchedulePlan(
     });
   }
 
-  // Count non-summer semesters remaining (or total semesters if only summer remains)
   const regularSemestersRemaining = semesters.filter((s) => s.term !== 'SUMMER').length;
   const semestersToGraduation =
     regularSemestersRemaining > 0 ? regularSemestersRemaining : semesters.length;

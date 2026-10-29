@@ -1,20 +1,20 @@
-import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import { useRouter } from "expo-router";
+import { useState } from "react";
 import {
-  type GestureResponderEvent,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+    type GestureResponderEvent,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { OnboardingHeader } from '@/components/onboarding/onboarding-header';
-import { StickyContinueCard } from '@/components/onboarding/sticky-continue-card';
-import { BrandTheme, MaxContentWidth } from '@/constants/theme';
-import { SUBJECT_AREAS, type SubjectArea } from '@/db/repository';
-import { usePlanner } from '@/state/planner-context';
+import { OnboardingHeader } from "@/components/onboarding/onboarding-header";
+import { StickyContinueCard } from "@/components/onboarding/sticky-continue-card";
+import { BrandTheme, MaxContentWidth } from "@/constants/theme";
+import { SUBJECT_AREAS, type SubjectArea } from "@/db/repository";
+import { usePlanner } from "@/state/planner-context";
 
 const RATING_STEPS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const;
 
@@ -55,20 +55,14 @@ function DraggableSlider({
       onStartShouldSetResponder={() => true}
       onMoveShouldSetResponder={() => true}
       onResponderGrant={handleResponderGrant}
-      onResponderMove={handleResponderMove}>
-      {/* Background grey track */}
+      onResponderMove={handleResponderMove}
+    >
       <View style={styles.trackBackground} />
-
-      {/* Active green filled track */}
       <View style={[styles.trackActiveFill, { width: `${fillPercent}%` }]} />
-
-      {/* Circular green thumb positioned at fillPercent */}
       <View
         pointerEvents="none"
         style={[styles.thumbCircle, { left: `${fillPercent}%` }]}
       />
-
-      {/* 10 discrete tap targets spanning the track */}
       <View style={styles.stepsOverlay} pointerEvents="box-none">
         {RATING_STEPS.map((stepScore) => (
           <Pressable
@@ -85,13 +79,6 @@ function DraggableSlider({
   );
 }
 
-/**
- * Screen 08 — Rate Your Confidence (`08_Confidence_Rating.png`)
- *
- * Lets the student rate their confidence from 1 (Very Low) to 10 (Very High)
- * across the 5 core subject areas: Mathematics, Science, Agriculture,
- * Animal Science, and Research with real-time draggable sliders.
- */
 export default function ConfidenceRatingScreen() {
   const router = useRouter();
   const { confidenceRatings, setSubjectConfidence, persistConfidenceRatings } =
@@ -99,11 +86,11 @@ export default function ConfidenceRatingScreen() {
 
   const handleContinue = async () => {
     await persistConfidenceRatings();
-    router.push('/onboarding/analyzing');
+    router.push("/onboarding/analyzing");
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
       <View style={styles.mainColumn}>
         <OnboardingHeader
           stepText="STEP 2 OF 3"
@@ -111,16 +98,17 @@ export default function ConfidenceRatingScreen() {
           progressPercent={68}
           title="Rate Your Confidence"
           subtitle={
-            'How confident are you in these subject areas?\n(1 = Very Low, 10 = Very High)'
+            "How confident are you in these subject areas?\n(1 = Very Low, 10 = Very High)"
           }
         />
 
         <ScrollView
           style={styles.scrollArea}
           contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}>
+          showsVerticalScrollIndicator={false}
+        >
           {SUBJECT_AREAS.map((area: SubjectArea) => {
-            const currentScore = confidenceRatings[area] ?? 7;
+            const currentScore = confidenceRatings[area] ?? 5;
 
             return (
               <View key={area} style={styles.sliderSection}>
@@ -130,13 +118,16 @@ export default function ConfidenceRatingScreen() {
                   <DraggableSlider
                     area={area}
                     currentScore={currentScore}
-                    onRatingChange={(score) => setSubjectConfidence(area, score)}
+                    onRatingChange={(score) =>
+                      setSubjectConfidence(area, score)
+                    }
                   />
 
                   {/* Numeric value badge on the right */}
                   <View
                     style={styles.valueBadge}
-                    testID={`confidence-value-${area}`}>
+                    testID={`confidence-value-${area}`}
+                  >
                     <Text style={styles.valueBadgeText}>{currentScore}</Text>
                   </View>
                 </View>
@@ -152,7 +143,7 @@ export default function ConfidenceRatingScreen() {
             </View>
             <Text style={styles.tipText}>
               {
-                'Be honest with your answers.\nYour confidence helps us recommend\na workload that fits your strengths.'
+                "Be honest with your answers.\nYour confidence helps us recommend\na workload that fits your strengths."
               }
             </Text>
           </View>
@@ -171,14 +162,14 @@ export default function ConfidenceRatingScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
   },
   mainColumn: {
     flex: 1,
-    width: '100%',
+    width: "100%",
     maxWidth: MaxContentWidth,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
   },
   scrollArea: {
     flex: 1,
@@ -194,89 +185,89 @@ const styles = StyleSheet.create({
   },
   subjectLabel: {
     fontSize: 14,
-    fontWeight: '800',
+    fontWeight: "800",
     color: BrandTheme.textPrimary,
   },
   sliderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 16,
   },
   trackContainer: {
     flex: 1,
     height: 38,
-    justifyContent: 'center',
-    position: 'relative',
+    justifyContent: "center",
+    position: "relative",
   },
   trackBackground: {
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#E4EAE6',
-    width: '100%',
+    backgroundColor: "#E4EAE6",
+    width: "100%",
   },
   trackActiveFill: {
-    position: 'absolute',
+    position: "absolute",
     left: 0,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#137A4B',
+    backgroundColor: "#137A4B",
   },
   thumbCircle: {
-    position: 'absolute',
+    position: "absolute",
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: '#137A4B',
+    backgroundColor: "#137A4B",
     marginLeft: -11,
     borderWidth: 2,
-    borderColor: '#FFFFFF',
-    shadowColor: '#0A2916',
+    borderColor: "#FFFFFF",
+    shadowColor: "#0A2916",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 4,
   },
   stepsOverlay: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     right: 0,
     bottom: 0,
     left: 0,
-    flexDirection: 'row',
+    flexDirection: "row",
   },
   stepTouchZone: {
     flex: 1,
-    height: '100%',
+    height: "100%",
   },
   valueBadge: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F2F4F3',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#F2F4F3",
+    alignItems: "center",
+    justifyContent: "center",
   },
   valueBadgeText: {
     fontSize: 14.5,
-    fontWeight: '800',
+    fontWeight: "800",
     color: BrandTheme.textPrimary,
   },
   tipBanner: {
-    backgroundColor: '#E2F4E7',
+    backgroundColor: "#E2F4E7",
     borderRadius: 16,
     paddingHorizontal: 18,
     paddingVertical: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 14,
     marginTop: 6,
   },
   bulbIconWrapper: {
     width: 22,
     height: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   bulbGlobe: {
     width: 14,
@@ -296,6 +287,6 @@ const styles = StyleSheet.create({
   tipText: {
     fontSize: 12.5,
     lineHeight: 18,
-    color: '#2F5B41',
+    color: "#2F5B41",
   },
 });

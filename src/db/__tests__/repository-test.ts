@@ -14,11 +14,6 @@ import {
 import { generateAcademicSchedulePlan } from '@/domain/algorithms/schedule-generator';
 import { ANSCI_CURRICULUM } from '@/domain/curriculum/ansci-curriculum';
 
-/**
- * In-memory relational store implementing ExtendedSqlExecutor to verify
- * that student profile, completed courses, and confidence ratings persist
- * and reload accurately across app restarts.
- */
 function createInMemorySqliteStore(): ExtendedSqlExecutor {
   let profileRow: Record<string, unknown> | null = null;
   const completedSet = new Set<string>();

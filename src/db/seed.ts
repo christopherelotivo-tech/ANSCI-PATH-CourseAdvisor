@@ -3,21 +3,12 @@ import type { Curriculum } from '@/domain/curriculum/types';
 
 import { CREATE_TABLES_SQL, DATABASE_VERSION } from './schema';
 
-/**
- * Minimal database executor interface so our migration and curriculum seeding
- * logic can run against both a real `expo-sqlite` SQLiteDatabase and a
- * lightweight test double in Jest unit tests.
- */
 export interface SqlExecutor {
   execAsync(source: string): Promise<void>;
   runAsync(source: string, ...params: (string | number | null)[]): Promise<unknown>;
   getFirstAsync<T>(source: string, ...params: (string | number | null)[]): Promise<T | null>;
 }
 
-/**
- * Runs database migrations and seeds the official BS Agriculture (Animal Science)
- * curriculum using parameterized queries.
- */
 export async function initializeAndSeedDatabase(
   db: SqlExecutor,
   curriculum: Curriculum = ANSCI_CURRICULUM
@@ -32,7 +23,6 @@ export async function initializeAndSeedDatabase(
     return;
   }
 
-  // Ensure curriculum rows exist even if database was already at version 1
   const existingCount = await db.getFirstAsync<{ count: number }>(
     'SELECT COUNT(*) as count FROM courses WHERE program_code = ?',
     curriculum.programCode

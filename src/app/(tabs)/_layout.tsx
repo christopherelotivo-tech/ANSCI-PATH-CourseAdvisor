@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Platform, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BrandTheme } from '@/constants/theme';
 
@@ -50,6 +51,8 @@ function CustomTabButtonContent({
       <TabGlyph kind={kind} color={color} />
       <Text
         style={[styles.tabLabel, focused && styles.tabLabelActive]}
+        numberOfLines={1}
+        ellipsizeMode="clip"
         allowFontScaling={false}>
         {label}
       </Text>
@@ -57,17 +60,22 @@ function CustomTabButtonContent({
   );
 }
 
-/**
- * Main Application Bottom Tab Navigator (`Plan`, `Courses`, `Graph`, `Settings`)
- * matching screenshots `12_Your_Plan_Roadmap.png` through `15_Settings.png`.
- */
 export default function MainTabsLayout() {
+  const insets = useSafeAreaInsets();
+  const bottomInset = Math.max(insets.bottom, Platform.OS === 'ios' ? 16 : 8);
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: false,
-        tabBarStyle: styles.tabBar,
+        tabBarStyle: [
+          styles.tabBar,
+          {
+            height: 56 + bottomInset,
+            paddingBottom: bottomInset,
+          },
+        ],
       }}>
       <Tabs.Screen
         name="plan"
@@ -123,31 +131,31 @@ export default function MainTabsLayout() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    height: 74,
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
     borderTopColor: '#E5ECE7',
-    paddingTop: 8,
-    paddingBottom: 8,
+    paddingTop: 6,
     elevation: 8,
   },
   tabPill: {
-    minWidth: 68,
-    height: 54,
+    minWidth: 62,
+    height: 48,
     borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
+    gap: 3,
   },
   tabPillActive: {
     backgroundColor: '#E2F2E8',
   },
   tabLabel: {
-    fontSize: 11.5,
+    fontSize: 11,
     fontWeight: '600',
     color: '#79857E',
+    textAlign: 'center',
+    letterSpacing: -0.1,
   },
   tabLabelActive: {
     fontWeight: '800',

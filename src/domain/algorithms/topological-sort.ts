@@ -1,15 +1,3 @@
-/**
- * Kahn's Topological Sorting & Prerequisite Tier Assignment Engine
- *
- * Implements Section 3.1 (Step 4) & Section 9 of `docs/SystemArchitecture.pdf`:
- * - Orders remaining required courses so no course is ever scheduled before its prerequisites.
- * - Assigns each course to a topological prerequisite tier:
- *   - Tier 0: Courses with zero pending prerequisites (immediately available).
- *   - Tier N: Courses that depend on at least one course in Tier N - 1.
- * - Computes the Critical Path (longest prerequisite dependency chain) to detect
- *   when a student's remaining dependency chain requires extended terms.
- */
-
 import type { CurriculumCourse, Term } from '@/domain/curriculum/types';
 
 import { buildPrerequisiteGraph } from './dag-validator';
@@ -21,18 +9,12 @@ export interface TopologicalTier {
 
 export interface TopologicalSortResult {
   isAcyclic: boolean;
-  /** Courses ordered topologically so every prerequisite appears before its dependents */
   orderedCourses: CurriculumCourse[];
   orderedCourseCodes: string[];
-  /** Courses grouped by prerequisite depth tier (Tier 0, Tier 1, ..., Tier K) */
   tiers: TopologicalTier[];
-  /** Map of courseCode -> tier index (0..K) */
   courseTierMap: Record<string, number>;
-  /** Length of the longest prerequisite chain (number of sequential terms required by dependencies alone) */
   criticalPathLength: number;
-  /** Course codes along the longest dependency chain from root prerequisite to final dependent */
   criticalPathCourseCodes: string[];
-  /** Any course codes that could not be sorted due to a circular dependency */
   cycleResidualCodes: string[];
 }
 
@@ -56,12 +38,6 @@ function compareCurriculumOrder(a: CurriculumCourse, b: CurriculumCourse): numbe
   return a.code.localeCompare(b.code);
 }
 
-/**
- * Performs Kahn's topological sort and prerequisite tier assignment over the provided
- * set of courses (e.g. the remaining uncompleted required courses from Backward Chaining).
- *
- * Any prerequisite not present in `courses` is assumed already satisfied (or external).
- */
 export function runTopologicalSort(courses: CurriculumCourse[]): TopologicalSortResult {
   const graph = buildPrerequisiteGraph(courses);
   const inDegree = new Map<string, number>();
@@ -75,7 +51,6 @@ export function runTopologicalSort(courses: CurriculumCourse[]): TopologicalSort
     parentOnLongestPath.set(course.code, null);
   }
 
-  // Initialize queue with all Tier-0 courses (in-degree === 0), sorted deterministically
   const readyQueue: CurriculumCourse[] = courses
     .filter((c) => (inDegree.get(c.code) ?? 0) === 0)
     .sort(compareCurriculumOrder);
@@ -115,7 +90,6 @@ export function runTopologicalSort(courses: CurriculumCourse[]): TopologicalSort
     .filter((c) => !sortedSet.has(c.code))
     .map((c) => c.code);
 
-  // Group into TopologicalTiers
   const maxTier =
     orderedCourses.length > 0
       ? Math.max(...orderedCourses.map((c) => tierByCode.get(c.code) ?? 0))
@@ -141,7 +115,6 @@ export function runTopologicalSort(courses: CurriculumCourse[]): TopologicalSort
     }
   }
 
-  // Reconstruct the longest prerequisite chain (Critical Path)
   let deepestCourseCode: string | null = null;
   let deepestTier = -1;
   for (const course of orderedCourses) {
@@ -170,4 +143,3 @@ export function runTopologicalSort(courses: CurriculumCourse[]): TopologicalSort
     cycleResidualCodes,
   };
 }
-

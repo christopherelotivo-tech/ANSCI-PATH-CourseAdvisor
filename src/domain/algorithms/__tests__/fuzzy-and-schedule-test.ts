@@ -1,4 +1,7 @@
-import { DEFAULT_CONFIDENCE_RATINGS } from '@/db/repository';
+import {
+  DEFAULT_CONFIDENCE_RATINGS,
+  PROTOTYPE_CONFIDENCE_RATINGS,
+} from '@/db/repository';
 import {
   computeRecommendedCreditLimit,
   evaluateMamdaniInference,
@@ -66,13 +69,29 @@ describe('Milestone 4 — Mamdani Fuzzy Inference System & Schedule Generator', 
 
       const workload = runFuzzyWorkloadAnalysis(
         secondYearFirstSemCourses,
-        DEFAULT_CONFIDENCE_RATINGS
+        PROTOTYPE_CONFIDENCE_RATINGS
       );
 
       expect(workload.stressLabel).toBe('Moderate');
       expect(workload.stressScore).toBe(56);
       expect(workload.recommendedUnits).toBe(15);
       expect(workload.recommendedRange).toEqual({ minUnits: 12, maxUnits: 18 });
+    });
+
+    test('evaluates neutral baseline ratings (5/10) cleanly without runtime errors', () => {
+      const firstSemCourses = ANSCI_CURRICULUM.courses.filter(
+        (c) => c.year === 1 && c.term === 'FIRST' && c.creditBearing
+      );
+
+      const workload = runFuzzyWorkloadAnalysis(
+        firstSemCourses,
+        DEFAULT_CONFIDENCE_RATINGS
+      );
+
+      expect(workload.recommendedUnits).toBeGreaterThanOrEqual(12);
+      expect(workload.recommendedUnits).toBeLessThanOrEqual(21);
+      expect(workload.stressScore).toBeGreaterThan(0);
+      expect(workload.stressScore).toBeLessThanOrEqual(100);
     });
   });
 
@@ -86,7 +105,7 @@ describe('Milestone 4 — Mamdani Fuzzy Inference System & Schedule Generator', 
         currentYearLevel: 2,
         currentSemester: 'FIRST',
         targetTimelineYears: 4,
-        confidenceRatings: DEFAULT_CONFIDENCE_RATINGS,
+        confidenceRatings: PROTOTYPE_CONFIDENCE_RATINGS,
       });
 
       expect(plan.nextSemester.semesterTitle).toBe('2nd Year · 1st Semester');

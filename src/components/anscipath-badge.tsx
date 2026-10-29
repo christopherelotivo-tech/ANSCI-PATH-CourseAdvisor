@@ -3,44 +3,45 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { BrandTheme } from '@/constants/theme';
 
-/**
- * Renders the circular "AnSciPath — PLAN YOUR ANIMAL SCIENCE DEGREE" medallion
- * from `01_Welcome_Get_Started.png`.
- *
- * Uses native vector shapes matching the 4-pin agricultural crest, dashed inner
- * ring, and dual-tone wordmark so it renders crisply on all Android screen densities
- * without requiring an external bitmap export.
- */
-export function AnSciPathBadge() {
+export interface AnSciPathBadgeProps {
+  scale?: number;
+}
+
+export function AnSciPathBadge({ scale = 1 }: AnSciPathBadgeProps = {}) {
+  const isScaled = scale !== 1;
+  const scaledSize = MEDALLION_SIZE * scale;
+
   return (
-    <View style={styles.outerMedallion} accessibilityRole="header">
+    <View
+      style={[
+        styles.outerMedallion,
+        isScaled && {
+          transform: [{ scale }],
+          marginVertical: (scaledSize - MEDALLION_SIZE) / 2,
+        },
+      ]}
+      accessibilityRole="header">
       <View style={styles.dashedRing}>
-        {/* Four-pin crest mark */}
         <View style={styles.crestContainer} aria-hidden>
           <View style={styles.pinsRow}>
-            {/* Pin 1: Green */}
             <View style={[styles.pinWrapper, styles.pinLeftOuter]}>
               <View style={[styles.pinHead, { backgroundColor: BrandTheme.crestPinGreen }]} />
               <View style={styles.pinStem} />
             </View>
-            {/* Pin 2: Gold-Yellow */}
             <View style={[styles.pinWrapper, styles.pinLeftInner]}>
               <View style={[styles.pinHead, { backgroundColor: BrandTheme.crestPinYellow }]} />
               <View style={styles.pinStem} />
             </View>
-            {/* Pin 3: Orange */}
             <View style={[styles.pinWrapper, styles.pinRightInner]}>
               <View style={[styles.pinHead, { backgroundColor: BrandTheme.crestPinOrange }]} />
               <View style={styles.pinStem} />
             </View>
-            {/* Pin 4: Red */}
             <View style={[styles.pinWrapper, styles.pinRightOuter]}>
               <View style={[styles.pinHead, { backgroundColor: BrandTheme.crestPinRed }]} />
               <View style={styles.pinStem} />
             </View>
           </View>
 
-          {/* Dark-green pouch/hill base with white wave */}
           <View style={styles.crestBase}>
             <Text style={styles.crestWave} allowFontScaling={false}>
               ∽
@@ -48,13 +49,11 @@ export function AnSciPathBadge() {
           </View>
         </View>
 
-        {/* Dual-tone brand title */}
         <Text style={styles.brandWordmark} allowFontScaling={false}>
           <Text style={styles.brandAnSci}>AnSci</Text>
           <Text style={styles.brandPath}>Path</Text>
         </Text>
 
-        {/* Tagline */}
         <Text style={styles.tagline} allowFontScaling={false}>
           {'PLAN YOUR ANIMAL SCIENCE\nDEGREE'}
         </Text>

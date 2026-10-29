@@ -1,5 +1,6 @@
+import { useRouter } from 'expo-router';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { BrandTheme } from '@/constants/theme';
 
@@ -7,6 +8,7 @@ export interface TabScreenHeaderProps {
   eyebrow?: string;
   title: string;
   fullName: string;
+  onAvatarPress?: () => void;
 }
 
 export function getInitials(fullName: string): string {
@@ -15,7 +17,7 @@ export function getInitials(fullName: string): string {
     .split(/\s+/)
     .filter(Boolean);
   if (parts.length === 0) {
-    return 'JD';
+    return 'AS';
   }
   if (parts.length === 1) {
     return parts[0].slice(0, 2).toUpperCase();
@@ -23,12 +25,22 @@ export function getInitials(fullName: string): string {
   return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
 }
 
-/**
- * Shared top header for the 4 main application tabs (`12_Your_Plan_Roadmap.png` .. `15_Settings.png`).
- * Displays the optional uppercase eyebrow, bold screen title, and coral student initials avatar.
- */
-export function TabScreenHeader({ eyebrow, title, fullName }: TabScreenHeaderProps) {
+export function TabScreenHeader({
+  eyebrow,
+  title,
+  fullName,
+  onAvatarPress,
+}: TabScreenHeaderProps) {
+  const router = useRouter();
   const initials = getInitials(fullName);
+
+  const handleAvatarPress = () => {
+    if (onAvatarPress) {
+      onAvatarPress();
+    } else {
+      router.push('/(tabs)/settings');
+    }
+  };
 
   return (
     <View style={styles.headerContainer}>
@@ -37,11 +49,20 @@ export function TabScreenHeader({ eyebrow, title, fullName }: TabScreenHeaderPro
         <Text style={styles.titleText}>{title}</Text>
       </View>
 
-      <View style={styles.avatarCircle} testID="header-student-avatar">
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Student Profile for ${fullName}`}
+        testID="header-student-avatar"
+        onPress={handleAvatarPress}
+        hitSlop={12}
+        style={({ pressed }) => [
+          styles.avatarCircle,
+          pressed && styles.avatarCirclePressed,
+        ]}>
         <Text style={styles.avatarInitials} allowFontScaling={false}>
           {initials}
         </Text>
-      </View>
+      </Pressable>
     </View>
   );
 }
@@ -79,6 +100,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#DF7E58',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  avatarCirclePressed: {
+    opacity: 0.8,
+    transform: [{ scale: 0.96 }],
   },
   avatarInitials: {
     fontSize: 13.5,

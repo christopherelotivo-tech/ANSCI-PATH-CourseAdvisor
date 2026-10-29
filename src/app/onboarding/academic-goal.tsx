@@ -15,12 +15,6 @@ const TIMELINE_OPTIONS: { years: TargetTimelineYears; label: string }[] = [
   { years: 6, label: '6 Years' },
 ];
 
-/**
- * Screen 03 — Academic Goal (`03_Academic_Goal.png`)
- *
- * Confirms the BS Agriculture (Major in Animal Science) program and lets the
- * student choose a 4-year, 5-year, or 6-year completion timeline.
- */
 export default function AcademicGoalScreen() {
   const router = useRouter();
   const { profile, updateAcademicGoal } = usePlanner();

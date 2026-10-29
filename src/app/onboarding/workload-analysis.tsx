@@ -14,19 +14,8 @@ import { OnboardingHeader } from '@/components/onboarding/onboarding-header';
 import { StickyContinueCard } from '@/components/onboarding/sticky-continue-card';
 import { StressGauge } from '@/components/onboarding/stress-gauge';
 import { BrandTheme, MaxContentWidth } from '@/constants/theme';
-import { MAMDANI_FUZZY_RULES } from '@/domain/algorithms/fuzzy-workload';
 import { usePlanner } from '@/state/planner-context';
 
-/**
- * Screen 10 — Workload Analysis (`10_Workload_Analysis.png`)
- *
- * Displays the output of the Mamdani Fuzzy Inference System (`fuzzy-workload.ts`):
- * - Semicircle Stress Gauge with crisp defuzzified Semester Stress Level (0-100%)
- * - Green / Amber / Red Workload Indicator (`Flow.pdf` Step 10)
- * - Recommended Credit Limit (12-18 units)
- * - Factors Considered + interactive Mamdani Fuzzy Engine Breakdown (Fuzzification,
- *   IF-THEN Rule Evaluation, Centroid Defuzzification per `SystemArchitecture.pdf` Sec 3.2)
- */
 export default function WorkloadAnalysisScreen() {
   const router = useRouter();
   const { academicPlan } = usePlanner();
@@ -78,7 +67,6 @@ export default function WorkloadAnalysisScreen() {
             stressLabel={workloadAnalysis.stressLabel}
           />
 
-          {/* Green / Amber / Red Workload Indicator Bar (Flow.pdf Step 10) */}
           <View
             style={styles.trafficLightRow}
             testID="workload-traffic-light-indicator">
@@ -128,7 +116,6 @@ export default function WorkloadAnalysisScreen() {
             </View>
           </View>
 
-          {/* Recommended Credit Limit Card */}
           <View style={styles.creditLimitCard} testID="recommended-credit-limit-card">
             <View style={styles.creditIconBox} aria-hidden>
               <View style={styles.docOutline}>
@@ -150,7 +137,6 @@ export default function WorkloadAnalysisScreen() {
             </View>
           </View>
 
-          {/* Factors Considered Section */}
           <View style={styles.factorsSection}>
             <Text style={styles.factorsHeading}>Factors Considered</Text>
 
@@ -187,7 +173,6 @@ export default function WorkloadAnalysisScreen() {
             </View>
           </View>
 
-          {/* Expandable Mamdani Fuzzy Inference Engine Breakdown (SystemArchitecture.pdf Sec 3.2) */}
           <View
             style={styles.mamdaniCard}
             testID="mamdani-fuzzy-breakdown-card">
@@ -198,10 +183,10 @@ export default function WorkloadAnalysisScreen() {
               style={styles.mamdaniToggleHeader}>
               <View style={styles.mamdaniTitleCol}>
                 <Text style={styles.mamdaniEyebrow}>
-                  MAMDANI FUZZY INFERENCE ENGINE
+                  PERSONALIZED WORKLOAD GUIDE
                 </Text>
                 <Text style={styles.mamdaniTitle}>
-                  How your stress & credit limit were calculated
+                  Why this unit load is recommended for you
                 </Text>
               </View>
               <Text style={styles.mamdaniChevron}>
@@ -215,40 +200,37 @@ export default function WorkloadAnalysisScreen() {
                 testID="mamdani-fuzzy-details-panel">
                 <View style={styles.mamdaniStageBlock}>
                   <Text style={styles.mamdaniStageTitle}>
-                    1. Fuzzification (Inputs → Linguistic Sets)
+                    1. Your Confidence & Course Difficulty
                   </Text>
                   <Text style={styles.mamdaniStageText}>
-                    {`• Effective Confidence: ${workloadAnalysis.effectiveConfidence} / 10 (Low: ${workloadAnalysis.confidenceMemberships.LOW}, Med: ${workloadAnalysis.confidenceMemberships.MEDIUM}, High: ${workloadAnalysis.confidenceMemberships.HIGH})`}
+                    {`• Your average confidence for next term's subjects: ${workloadAnalysis.effectiveConfidence} out of 10`}
                   </Text>
                   <Text style={styles.mamdaniStageText}>
-                    {`• Effective Course Difficulty: ${workloadAnalysis.effectiveDifficulty} / 10 (Easy: ${workloadAnalysis.difficultyMemberships.EASY}, Mod: ${workloadAnalysis.difficultyMemberships.MODERATE}, Hard: ${workloadAnalysis.difficultyMemberships.HARD})`}
+                    {`• Average difficulty of your upcoming courses: ${workloadAnalysis.effectiveDifficulty} out of 10`}
                   </Text>
                 </View>
 
                 <View style={styles.mamdaniStageBlock}>
                   <Text style={styles.mamdaniStageTitle}>
-                    2. IF–THEN Rule Evaluation
+                    2. How We Balance Your Semester
                   </Text>
-                  {MAMDANI_FUZZY_RULES.slice(0, 2).map((rule) => (
-                    <Text key={rule.id} style={styles.mamdaniRuleText}>
-                      {`• [${rule.id}] ${rule.description}`}
-                    </Text>
-                  ))}
-                  {workloadAnalysis.firedRules.map((fired) => (
-                    <Text
-                      key={`fired-${fired.rule.id}`}
-                      style={styles.mamdaniActiveRuleText}>
-                      {`✓ Active Rule ${fired.rule.id} (strength ${fired.firingStrength}): ${fired.rule.description}`}
-                    </Text>
-                  ))}
+                  <Text style={styles.mamdaniRuleText}>
+                    • If upcoming courses are heavy and you feel less confident in those subjects, we suggest a lighter 12-unit load so you can focus.
+                  </Text>
+                  <Text style={styles.mamdaniRuleText}>
+                    • If your confidence matches the course difficulty, a steady 15-unit load keeps you on pace without burnout.
+                  </Text>
+                  <Text style={styles.mamdaniActiveRuleText}>
+                    {`✓ Your Match: ${workloadAnalysis.stressLabel} workload (${workloadAnalysis.stressScore}% estimated stress) — ${workloadAnalysis.recommendedUnits} units is your ideal pace next semester.`}
+                  </Text>
                 </View>
 
                 <View style={styles.mamdaniStageBlock}>
                   <Text style={styles.mamdaniStageTitle}>
-                    3. Centroid Defuzzification (Output)
+                    3. Recommended Semester Load
                   </Text>
                   <Text style={styles.mamdaniStageText}>
-                    {`• Aggregated Centroid Stress Score: ${workloadAnalysis.stressScore}% (${workloadAnalysis.stressLabel}) → Recommended Load: ${workloadAnalysis.recommendedUnits} units`}
+                    {`• Taking up to ${workloadAnalysis.recommendedUnits} units gives you the best balance between steady degree progress and manageable study hours.`}
                   </Text>
                 </View>
               </View>

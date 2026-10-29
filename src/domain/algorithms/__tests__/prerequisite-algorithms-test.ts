@@ -84,7 +84,7 @@ describe('Milestone 3 — DAG Validation, Backward Chaining & Topological Sort',
   });
 
   describe('runBackwardChaining & evaluateCasStanding', () => {
-    test('verifies Flow.pdf Stage 7 & 8 scenario: ANS040 requires AGR001 and CRS001', () => {
+    test('verifies ANS040 requires AGR001 and CRS001', () => {
       // 1. Neither AGR001 nor CRS001 completed
       const emptyResult = runBackwardChaining(ANSCI_CURRICULUM, []);
       const ans040Blocked = emptyResult.analysisByCourse['ANS040'];

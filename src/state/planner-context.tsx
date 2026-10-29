@@ -38,11 +38,8 @@ export interface PlannerContextValue {
   profile: StudentProfileRecord;
   completedCourses: Set<string>;
   confidenceRatings: ConfidenceRatingsMap;
-  /** Live Backward Chaining prerequisite evaluation derived from curriculum + completedCourses */
   backwardChaining: BackwardChainingResult;
-  /** Live Kahn's Topological Sort & Prerequisite Tiering over remaining required courses */
   topologicalSort: TopologicalSortResult;
-  /** Live Mamdani Fuzzy Workload Analysis & Generated Academic Schedule Plan */
   academicPlan: GeneratedAcademicPlan;
   updateStudentSetup: (input: {
     fullName: string;
@@ -53,6 +50,7 @@ export interface PlannerContextValue {
   updateAcademicGoal: (targetTimelineYears: TargetTimelineYears) => Promise<void>;
   toggleCourseCompleted: (courseCode: string) => void;
   setCoursesCompletedBulk: (courseCodes: string[], completed: boolean) => void;
+  clearAllCompletedCourses: () => void;
   persistCompletedCourses: () => Promise<void>;
   setSubjectConfidence: (area: SubjectArea, rating: number) => void;
   persistConfidenceRatings: () => Promise<void>;
@@ -62,12 +60,28 @@ export interface PlannerContextValue {
 
 const PlannerContext = createContext<PlannerContextValue | null>(null);
 
-export function PlannerProvider({ children }: { children: React.ReactNode }) {
+export interface PlannerProviderProps {
+  children: React.ReactNode;
+  initialProfile?: StudentProfileRecord;
+  initialCompletedCourses?: Set<string>;
+  initialConfidenceRatings?: ConfidenceRatingsMap;
+}
+
+export function PlannerProvider({
+  children,
+  initialProfile,
+  initialCompletedCourses,
+  initialConfidenceRatings,
+}: PlannerProviderProps) {
   const [isHydrated, setIsHydrated] = useState(false);
-  const [profile, setProfile] = useState<StudentProfileRecord>(DEFAULT_STUDENT_PROFILE);
-  const [completedCourses, setCompletedCourses] = useState<Set<string>>(() => new Set());
+  const [profile, setProfile] = useState<StudentProfileRecord>(
+    initialProfile ?? DEFAULT_STUDENT_PROFILE
+  );
+  const [completedCourses, setCompletedCourses] = useState<Set<string>>(
+    () => initialCompletedCourses ?? new Set()
+  );
   const [confidenceRatings, setConfidenceRatings] = useState<ConfidenceRatingsMap>(
-    DEFAULT_CONFIDENCE_RATINGS
+    initialConfidenceRatings ?? DEFAULT_CONFIDENCE_RATINGS
   );
 
   useEffect(() => {
@@ -142,8 +156,8 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
     }) => {
       const updated: StudentProfileRecord = {
         ...profile,
-        fullName: input.fullName.trim() || DEFAULT_STUDENT_PROFILE.fullName,
-        studentId: input.studentId.trim() || DEFAULT_STUDENT_PROFILE.studentId,
+        fullName: input.fullName.trim(),
+        studentId: input.studentId.trim(),
         currentYearLevel: input.currentYearLevel,
         currentSemester: input.currentSemester,
       };
@@ -217,6 +231,17 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
       }
       return next;
     });
+  }, []);
+
+  const clearAllCompletedCourses = useCallback(() => {
+    setCompletedCourses(new Set());
+    if (Platform.OS !== 'web') {
+      void getDatabase()
+        .then((db) => replaceCompletedCourseCodes(db, []))
+        .catch((err) =>
+          console.warn('[CourseAdvisor] Failed to clear completed courses:', err)
+        );
+    }
   }, []);
 
   const persistCompletedCourses = useCallback(async () => {
@@ -293,6 +318,7 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
       updateAcademicGoal,
       toggleCourseCompleted,
       setCoursesCompletedBulk,
+      clearAllCompletedCourses,
       persistCompletedCourses,
       setSubjectConfidence,
       persistConfidenceRatings,
@@ -311,6 +337,7 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
       updateAcademicGoal,
       toggleCourseCompleted,
       setCoursesCompletedBulk,
+      clearAllCompletedCourses,
       persistCompletedCourses,
       setSubjectConfidence,
       persistConfidenceRatings,

@@ -29,9 +29,9 @@ export interface StudentProfileRecord {
 export type ConfidenceRatingsMap = Record<SubjectArea, number>;
 
 export const DEFAULT_STUDENT_PROFILE: StudentProfileRecord = {
-  fullName: 'Juan Dela Cruz',
-  studentId: '2025-0001',
-  currentYearLevel: 2,
+  fullName: '',
+  studentId: '',
+  currentYearLevel: 1,
   currentSemester: 'FIRST',
   programCode: 'BSA-ANSCI',
   goalType: 'COMPLETE_PROGRAM',
@@ -39,11 +39,26 @@ export const DEFAULT_STUDENT_PROFILE: StudentProfileRecord = {
   onboardingCompleted: false,
 };
 
-/**
- * Default confidence ratings matching `08_Confidence_Rating.png`
- * (Mathematics: 7, Science: 7, Agriculture: 8, Animal Science: 5, Research: 6).
- */
+export const PROTOTYPE_STUDENT_PROFILE: StudentProfileRecord = {
+  fullName: 'Juan Dela Cruz',
+  studentId: '2025-0001',
+  currentYearLevel: 2,
+  currentSemester: 'FIRST',
+  programCode: 'BSA-ANSCI',
+  goalType: 'COMPLETE_PROGRAM',
+  targetTimelineYears: 4,
+  onboardingCompleted: true,
+};
+
 export const DEFAULT_CONFIDENCE_RATINGS: ConfidenceRatingsMap = {
+  Mathematics: 5,
+  Science: 5,
+  Agriculture: 5,
+  'Animal Science': 5,
+  Research: 5,
+};
+
+export const PROTOTYPE_CONFIDENCE_RATINGS: ConfidenceRatingsMap = {
   Mathematics: 7,
   Science: 7,
   Agriculture: 8,
@@ -87,10 +102,15 @@ export async function loadStudentProfile(db: SqlExecutor): Promise<StudentProfil
     return { ...DEFAULT_STUDENT_PROFILE };
   }
 
+  const isLegacyMock =
+    row.full_name === 'Juan Dela Cruz' &&
+    row.student_id === '2025-0001' &&
+    row.onboarding_completed === 0;
+
   return {
-    fullName: row.full_name,
-    studentId: row.student_id,
-    currentYearLevel: (row.current_year_level as YearLevel) || 2,
+    fullName: isLegacyMock ? '' : row.full_name,
+    studentId: isLegacyMock ? '' : row.student_id,
+    currentYearLevel: (row.current_year_level as YearLevel) || 1,
     currentSemester: (row.current_semester as Term) || 'FIRST',
     programCode: row.program_code || 'BSA-ANSCI',
     goalType: 'COMPLETE_PROGRAM',
@@ -109,8 +129,8 @@ export async function saveStudentProfile(
       id, full_name, student_id, current_year_level, current_semester,
       program_code, goal_type, target_timeline_years, onboarding_completed, updated_at
     ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    profile.fullName.trim() || DEFAULT_STUDENT_PROFILE.fullName,
-    profile.studentId.trim() || DEFAULT_STUDENT_PROFILE.studentId,
+    profile.fullName.trim(),
+    profile.studentId.trim(),
     profile.currentYearLevel,
     profile.currentSemester,
     profile.programCode,

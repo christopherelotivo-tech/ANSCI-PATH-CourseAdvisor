@@ -1,19 +1,3 @@
-/**
- * Mamdani Fuzzy Inference System (FIS) for Academic Workload & Stress Scoring
- *
- * Implements Section 3.2 & Section 9 of `docs/SystemArchitecture.pdf` and Stage 10 of `docs/Flow.pdf`:
- * 1. Fuzzification of crisp inputs:
- *    - Student Confidence C in [1, 10] -> { Low, Medium, High }
- *    - Course Difficulty D in [1, 10] -> { Easy, Moderate, Hard }
- * 2. Rule Evaluation using Mamdani min-implication:
- *    - Explicitly distinguishes the 2 rules documented in `docs/Flow.pdf` (Page 9)
- *      (`APPROVED_BY_FLOW_PDF`) from the 7 provisional rules needed to span the full
- *      3x3 linguistic matrix (`PROVISIONAL_FALLBACK`).
- * 3. Aggregation (pointwise max across clipped output fuzzy sets).
- * 4. Centroid Defuzzification over [0, 100] to compute crisp Semester Stress Score (0-100%)
- *    and Recommended Credit Limit (12-18 units).
- */
-
 import type { ConfidenceArea, CurriculumCourse } from '@/domain/curriculum/types';
 
 export type ConfidenceTerm = 'LOW' | 'MEDIUM' | 'HIGH';
@@ -22,7 +6,6 @@ export type RiskOutputTerm = 'VERY_LOW' | 'LOW' | 'MODERATE' | 'HIGH' | 'VERY_HI
 export type StressLevelLabel = 'Low' | 'Moderate' | 'High' | 'Very High';
 
 export type FuzzyRuleProvenance = 'APPROVED_BY_FLOW_PDF' | 'PROVISIONAL_FALLBACK';
-
 export type FuzzyRuleConnective = 'AND' | 'OR';
 
 export interface FuzzyRule {
@@ -50,24 +33,15 @@ export interface CourseDifficultyProfile {
 }
 
 export interface FuzzyWorkloadResult {
-  /** Aggregate effective student confidence (1-10) across evaluated courses */
   effectiveConfidence: number;
-  /** Aggregate effective course difficulty (1-10) across evaluated courses */
   effectiveDifficulty: number;
-  /** Crisp defuzzified semester stress percentage (0-100) */
   stressScore: number;
-  /** Human-readable stress classification ('Low' | 'Moderate' | 'High' | 'Very High') */
   stressLabel: StressLevelLabel;
-  /** Recommended credit limit for the next semester within [12, 18] */
   recommendedUnits: number;
-  /** Recommended unit range bounds displayed on Screen 10 */
   recommendedRange: { minUnits: number; maxUnits: number };
-  /** Fuzzified input memberships for transparency and unit testing */
   confidenceMemberships: Record<ConfidenceTerm, number>;
   difficultyMemberships: Record<DifficultyTerm, number>;
-  /** All fuzzy rules that fired with strength > 0 */
   firedRules: FiredFuzzyRule[];
-  /** Per-course difficulty and confidence breakdown */
   courseProfiles: CourseDifficultyProfile[];
 }
 
@@ -76,15 +50,6 @@ export const RECOMMENDED_UNIT_RANGE = {
   maxUnits: 18,
 } as const;
 
-/**
- * Mamdani Fuzzy Rule Base (3x3 Input Grid: Confidence x Difficulty -> Risk).
- *
- * NOTE ON ACADEMIC REQUIREMENT INTEGRITY (Master Prompt Section 8 & Flow.pdf Page 9):
- * `docs/Flow.pdf` explicitly provides R1 and R2 as examples and notes that the full
- * rule table was not finalized in the source PDF. R1 and R2 are tagged
- * `APPROVED_BY_FLOW_PDF`, while R3-R9 are tagged `PROVISIONAL_FALLBACK` so reviewers
- * can inspect or override them without conflating them with finalized requirements.
- */
 export const MAMDANI_FUZZY_RULES: readonly FuzzyRule[] = [
   {
     id: 'R1',
@@ -164,9 +129,6 @@ function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
-/**
- * Standard triangular membership function mu(x; a, b, c).
- */
 export function triangularMembership(x: number, a: number, b: number, c: number): number {
   if (x <= a || x >= c) {
     return 0;
@@ -180,10 +142,6 @@ export function triangularMembership(x: number, a: number, b: number, c: number)
   return (c - x) / (c - b);
 }
 
-/**
- * Standard trapezoidal membership function mu(x; a, b, c, d).
- * Supports left-shoulder (a === b) and right-shoulder (c === d).
- */
 export function trapezoidalMembership(
   x: number,
   a: number,
@@ -203,9 +161,6 @@ export function trapezoidalMembership(
   return d === c ? 1 : (d - x) / (d - c);
 }
 
-/**
- * Step 1a: Fuzzify Student Confidence C in [1, 10].
- */
 export function fuzzifyConfidence(confidence: number): Record<ConfidenceTerm, number> {
   const c = clamp(confidence, 1, 10);
   return {
@@ -215,9 +170,6 @@ export function fuzzifyConfidence(confidence: number): Record<ConfidenceTerm, nu
   };
 }
 
-/**
- * Step 1b: Fuzzify Course Difficulty D in [1, 10].
- */
 export function fuzzifyDifficulty(difficulty: number): Record<DifficultyTerm, number> {
   const d = clamp(difficulty, 1, 10);
   return {
@@ -227,9 +179,6 @@ export function fuzzifyDifficulty(difficulty: number): Record<DifficultyTerm, nu
   };
 }
 
-/**
- * Output membership functions for Risk / Stress S in [0, 100].
- */
 export function evaluateRiskOutputMembership(term: RiskOutputTerm, x: number): number {
   switch (term) {
     case 'VERY_LOW':
@@ -245,10 +194,6 @@ export function evaluateRiskOutputMembership(term: RiskOutputTerm, x: number): n
   }
 }
 
-/**
- * Maps a curriculum course to one of the 5 confidence rating subject areas
- * (`Mathematics`, `Science`, `Agriculture`, `Animal Science`, `Research`).
- */
 export function getCourseConfidenceArea(course: CurriculumCourse): ConfidenceArea {
   const code = course.code.toUpperCase();
   if (code === 'GEC104' || code === 'AEC001') {
@@ -278,30 +223,19 @@ export function getCourseConfidenceArea(course: CurriculumCourse): ConfidenceAre
   return 'Agriculture';
 }
 
-/**
- * Computes a transparent baseline course difficulty score in [1, 10] from objective
- * curriculum attributes when explicit faculty difficulty ratings are not provided.
- *
- * NOTE: Marked `isHeuristicDifficulty: true` because `docs/AnimalScienceCurriculum.pdf`
- * does not contain a difficulty column.
- */
 export function estimateCourseDifficulty(course: CurriculumCourse): number {
   let score = 4.5;
 
-  // Year level progression adds complexity
   if (course.year === 2) score += 0.8;
   if (course.year === 3) score += 1.5;
   if (course.year === 4) score += 2.0;
 
-  // Laboratory / field work intensity
   if (course.labHours && course.labHours >= 3) {
     score += 0.9;
   }
 
-  // Prerequisite depth
   score += Math.min(1.8, course.prerequisites.length * 0.6);
 
-  // Chemistry, Genetics, Biotechnology, and Thesis courses carry higher analytical load
   const area = getCourseConfidenceArea(course);
   if (area === 'Science' || area === 'Research') {
     score += 0.8;
@@ -312,10 +246,6 @@ export function estimateCourseDifficulty(course: CurriculumCourse): number {
   return clamp(Number(score.toFixed(2)), 1, 10);
 }
 
-/**
- * Evaluates the Mamdani Fuzzy Inference System for a single (confidence, difficulty) pair
- * using min-implication, max-aggregation, and centroid defuzzification over [0, 100].
- */
 export function evaluateMamdaniInference(
   confidence: number,
   difficulty: number,
@@ -334,7 +264,6 @@ export function evaluateMamdaniInference(
     const muConf = confidenceMemberships[rule.confidence];
     const muDiff = difficultyMemberships[rule.difficulty];
     const connective = rule.connective ?? 'AND';
-    // Mamdani AND = min(mu_A, mu_B); Mamdani OR = max(mu_A, mu_B)
     const rawStrength =
       connective === 'OR' ? Math.max(muConf, muDiff) : Math.min(muConf, muDiff);
     const firingStrength = Number(rawStrength.toFixed(4));
@@ -343,14 +272,12 @@ export function evaluateMamdaniInference(
     }
   }
 
-  // Step 3 & 4: Aggregation (max) and Centroid Defuzzification over x = 0..100
   let numerator = 0;
   let denominator = 0;
 
   for (let x = 0; x <= 100; x += 1) {
     let aggregatedMu = 0;
     for (const fired of firedRules) {
-      // Mamdani implication clips output fuzzy set at firingStrength
       const clippedMu = Math.min(
         fired.firingStrength,
         evaluateRiskOutputMembership(fired.rule.outputRisk, x)
@@ -374,9 +301,6 @@ export function evaluateMamdaniInference(
   };
 }
 
-/**
- * Classifies a crisp 0-100 stress percentage into a human-readable label.
- */
 export function getStressLevelLabel(stressScore: number): StressLevelLabel {
   if (stressScore < 40) {
     return 'Low';
@@ -390,12 +314,6 @@ export function getStressLevelLabel(stressScore: number): StressLevelLabel {
   return 'Very High';
 }
 
-/**
- * Maps a crisp 0-100 stress score to a recommended semester credit limit in [12, 18].
- * - Low stress (< 40%): 18 units
- * - Moderate stress (40% - 68%): 15 units (matches `10_Workload_Analysis.png` -> 56% = 15 units)
- * - High / Very High stress (> 68%): 12 units
- */
 export function computeRecommendedCreditLimit(stressScore: number): number {
   if (stressScore < 40) {
     return 18;
@@ -406,10 +324,6 @@ export function computeRecommendedCreditLimit(stressScore: number): number {
   return 12;
 }
 
-/**
- * Runs the complete Mamdani Fuzzy Workload Analysis across a candidate set of next-semester
- * courses and the student's 5 subject confidence ratings.
- */
 export function runFuzzyWorkloadAnalysis(
   candidateCourses: CurriculumCourse[],
   confidenceRatings: Record<ConfidenceArea, number>,
@@ -439,7 +353,6 @@ export function runFuzzyWorkloadAnalysis(
     };
   });
 
-  // Compute unit-weighted effective confidence & difficulty across the candidate term
   let weightedConfidenceSum = 0;
   let weightedDifficultySum = 0;
   let totalUnits = 0;

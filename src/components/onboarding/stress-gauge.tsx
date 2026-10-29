@@ -33,10 +33,6 @@ function getStressVisuals(stressLabel: StressLevelLabel) {
   }
 }
 
-/**
- * Animated Semicircle Stress Gauge matching `10_Workload_Analysis.png`.
- * Smoothly sweeps the arc from 0% to target stressScore and counts up the percentage readout.
- */
 export function StressGauge({ stressScore, stressLabel }: StressGaugeProps) {
   const isTest = Boolean(process.env.JEST_WORKER_ID);
   const clamped = Math.max(0, Math.min(100, Math.round(stressScore)));
