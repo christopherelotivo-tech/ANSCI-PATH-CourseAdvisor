@@ -187,6 +187,13 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
       } else {
         next.add(courseCode);
       }
+      if (Platform.OS !== 'web') {
+        void getDatabase()
+          .then((db) => replaceCompletedCourseCodes(db, next))
+          .catch((err) =>
+            console.warn('[CourseAdvisor] Failed to auto-persist course toggle:', err)
+          );
+      }
       return next;
     });
   }, []);
@@ -200,6 +207,13 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
         } else {
           next.delete(code);
         }
+      }
+      if (Platform.OS !== 'web') {
+        void getDatabase()
+          .then((db) => replaceCompletedCourseCodes(db, next))
+          .catch((err) =>
+            console.warn('[CourseAdvisor] Failed to auto-persist bulk courses:', err)
+          );
       }
       return next;
     });

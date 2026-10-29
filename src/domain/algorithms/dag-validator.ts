@@ -116,38 +116,46 @@ export function validateCurriculumDag(courses: CurriculumCourse[]): DagValidatio
   }
 
   const pathStack: string[] = [];
+  const callStack: { code: string; prereqIndex: number }[] = [];
 
-  function dfs(currentCode: string) {
-    color.set(currentCode, VisitColor.GRAY);
-    pathStack.push(currentCode);
-
-    const prerequisites = graph.courseToPrerequisites.get(currentCode) ?? [];
-    for (const prereqCode of prerequisites) {
-      const prereqState = color.get(prereqCode) ?? VisitColor.WHITE;
-
-      if (prereqState === VisitColor.WHITE) {
-        dfs(prereqCode);
-      } else if (prereqState === VisitColor.GRAY) {
-        // Found a cycle! Extract the loop from pathStack
-        const cycleStartIndex = pathStack.indexOf(prereqCode);
-        if (cycleStartIndex !== -1) {
-          const cyclePath = [...pathStack.slice(cycleStartIndex), prereqCode];
-          const key = cyclePath.join('->');
-          if (!recordedCycleKeys.has(key)) {
-            recordedCycleKeys.add(key);
-            cycles.push(cyclePath);
-          }
-        }
-      }
+  for (const startCode of graph.nodes.keys()) {
+    if (color.get(startCode) !== VisitColor.WHITE) {
+      continue;
     }
 
-    pathStack.pop();
-    color.set(currentCode, VisitColor.BLACK);
-  }
+    color.set(startCode, VisitColor.GRAY);
+    pathStack.push(startCode);
+    callStack.push({ code: startCode, prereqIndex: 0 });
 
-  for (const code of graph.nodes.keys()) {
-    if (color.get(code) === VisitColor.WHITE) {
-      dfs(code);
+    while (callStack.length > 0) {
+      const frame = callStack[callStack.length - 1];
+      const prerequisites = graph.courseToPrerequisites.get(frame.code) ?? [];
+
+      if (frame.prereqIndex < prerequisites.length) {
+        const prereqCode = prerequisites[frame.prereqIndex];
+        frame.prereqIndex += 1;
+        const prereqState = color.get(prereqCode) ?? VisitColor.WHITE;
+
+        if (prereqState === VisitColor.WHITE) {
+          color.set(prereqCode, VisitColor.GRAY);
+          pathStack.push(prereqCode);
+          callStack.push({ code: prereqCode, prereqIndex: 0 });
+        } else if (prereqState === VisitColor.GRAY) {
+          const cycleStartIndex = pathStack.indexOf(prereqCode);
+          if (cycleStartIndex !== -1) {
+            const cyclePath = [...pathStack.slice(cycleStartIndex), prereqCode];
+            const key = cyclePath.join('->');
+            if (!recordedCycleKeys.has(key)) {
+              recordedCycleKeys.add(key);
+              cycles.push(cyclePath);
+            }
+          }
+        }
+      } else {
+        callStack.pop();
+        pathStack.pop();
+        color.set(frame.code, VisitColor.BLACK);
+      }
     }
   }
 

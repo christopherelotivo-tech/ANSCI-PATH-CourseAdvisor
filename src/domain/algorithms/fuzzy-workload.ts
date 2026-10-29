@@ -23,10 +23,13 @@ export type StressLevelLabel = 'Low' | 'Moderate' | 'High' | 'Very High';
 
 export type FuzzyRuleProvenance = 'APPROVED_BY_FLOW_PDF' | 'PROVISIONAL_FALLBACK';
 
+export type FuzzyRuleConnective = 'AND' | 'OR';
+
 export interface FuzzyRule {
   id: string;
   confidence: ConfidenceTerm;
   difficulty: DifficultyTerm;
+  connective?: FuzzyRuleConnective;
   outputRisk: RiskOutputTerm;
   provenance: FuzzyRuleProvenance;
   description: string;
@@ -330,8 +333,11 @@ export function evaluateMamdaniInference(
   for (const rule of rules) {
     const muConf = confidenceMemberships[rule.confidence];
     const muDiff = difficultyMemberships[rule.difficulty];
-    // Mamdani AND operator = min(mu_A, mu_B)
-    const firingStrength = Number(Math.min(muConf, muDiff).toFixed(4));
+    const connective = rule.connective ?? 'AND';
+    // Mamdani AND = min(mu_A, mu_B); Mamdani OR = max(mu_A, mu_B)
+    const rawStrength =
+      connective === 'OR' ? Math.max(muConf, muDiff) : Math.min(muConf, muDiff);
+    const firingStrength = Number(rawStrength.toFixed(4));
     if (firingStrength > 0) {
       firedRules.push({ rule, firingStrength });
     }

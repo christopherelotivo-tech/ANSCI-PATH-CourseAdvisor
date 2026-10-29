@@ -63,6 +63,10 @@ export interface SemesterSchedulePlan {
 }
 
 export interface GeneratedAcademicPlan {
+  /** True if the curriculum graph is a valid DAG with 0 circular prerequisite loops */
+  isValidDag: boolean;
+  /** Detected circular prerequisite paths (empty when `isValidDag === true`) */
+  cycles: string[][];
   /** Fuzzy workload analysis for the immediate next semester */
   workloadAnalysis: FuzzyWorkloadResult;
   /** Immediate next semester recommendation shown on Screen 11 (`11_Recommended_Schedule.png`) */
@@ -263,12 +267,10 @@ function selectCoursesForSemester(
     (c) => c.creditBearing && c.units > 0
   );
 
-  // If this is a Summer term, only schedule Summer-designated practicum/OJT courses
-  // unless no regular semesters remain.
-  const candidates =
-    targetTerm === 'SUMMER'
-      ? eligibleCreditCourses.filter((c) => c.term === 'SUMMER')
-      : eligibleCreditCourses.filter((c) => c.term !== 'SUMMER');
+  // Strictly respect semester offering availability (FIRST, SECOND, SUMMER)
+  const candidates = eligibleCreditCourses.filter(
+    (c) => !c.term || c.term === targetTerm
+  );
 
   // Sort candidates by:
   // 1. Exact match with target (year, term) first
@@ -306,9 +308,35 @@ function selectCoursesForSemester(
   const selectedCodes = new Set<string>();
   let currentUnits = 0;
 
+  const smcOptions = curriculum.courses.filter((c) => c.kind === 'SMC_OPTION');
+
   for (const course of prioritized) {
     if (selectedCodes.has(course.code)) {
       continue;
+    }
+
+    // Ensure all known corequisites are either completed, already selected, or eligible now
+    const hasUnsatisfiedCoreq = course.corequisites.some(
+      (coCode) =>
+        curriculumIndexMap.has(coCode) &&
+        !completedSet.has(coCode) &&
+        !selectedCodes.has(coCode) &&
+        !eligibleMap.has(coCode)
+    );
+    if (hasUnsatisfiedCoreq) {
+      continue;
+    }
+
+    // Ensure SMC slots are only scheduled when at least one Specialized Major option is eligible
+    if (course.kind === 'SMC_SLOT' && smcOptions.length > 0) {
+      const anyOptionEligible = smcOptions.some((opt) =>
+        opt.prerequisites
+          .filter((p) => curriculumIndexMap.has(p))
+          .every((p) => completedSet.has(p))
+      );
+      if (!anyOptionEligible) {
+        continue;
+      }
     }
 
     const companion = findPairedLabOrLectureCode(course, eligibleMap);
@@ -470,10 +498,12 @@ export function generateAcademicSchedulePlan(
   }
 
   const semesters: SemesterSchedulePlan[] = [nextSemester];
-  let cursorSlotIndex = nextSlot.slotIndex + 1;
+  let currentSlotYear: YearLevel = nextSlot.year;
+  let currentSlotTerm: Term = nextSlot.term;
+  let emptySlotStreak = 0;
   let safetyCounter = 0;
 
-  while (safetyCounter < 16) {
+  while (safetyCounter < 40) {
     safetyCounter += 1;
     const remainingCheck = runBackwardChaining(curriculum, simulatedCompleted);
     const remainingCreditCourses = remainingCheck.remainingRequiredCourses.filter(
@@ -484,48 +514,44 @@ export function generateAcademicSchedulePlan(
       break;
     }
 
-    const slot =
-      cursorSlotIndex < ORDERED_CURRICULUM_SLOTS.length
-        ? ORDERED_CURRICULUM_SLOTS[cursorSlotIndex]
-        : {
-            year: 4 as YearLevel,
-            term: (safetyCounter % 2 === 0 ? 'FIRST' : 'SECOND') as Term,
-          };
-    cursorSlotIndex += 1;
+    const hasEligibleSummer = remainingCheck.eligibleNowCourses.some(
+      (c) => c.term === 'SUMMER' && c.creditBearing && c.units > 0
+    );
 
-    // If this is a SUMMER slot and no SUMMER course is currently eligible, skip to next regular term
-    if (
-      slot.term === 'SUMMER' &&
-      !remainingCheck.eligibleNowCourses.some((c) => c.term === 'SUMMER' && c.creditBearing)
-    ) {
-      continue;
+    // Advance calendar slot: FIRST -> SECOND -> (SUMMER if eligible) -> next year FIRST
+    if (currentSlotTerm === 'FIRST') {
+      currentSlotTerm = 'SECOND';
+    } else if (currentSlotTerm === 'SECOND') {
+      if (hasEligibleSummer) {
+        currentSlotTerm = 'SUMMER';
+      } else {
+        currentSlotYear = Math.min(4, currentSlotYear + 1) as YearLevel;
+        currentSlotTerm = 'FIRST';
+      }
+    } else {
+      currentSlotYear = Math.min(4, currentSlotYear + 1) as YearLevel;
+      currentSlotTerm = 'FIRST';
     }
 
-    // For future roadmap semesters beyond the immediate next semester, allow normal curriculum
-    // semester unit capacity (up to 23 units) so the student's multi-semester roadmap converges.
-    const termUnitCap = slot.term === 'SUMMER' ? 3 : 23;
+    const termUnitCap =
+      currentSlotTerm === 'SUMMER' ? 3 : workloadAnalysis.recommendedUnits;
     const plannedCourses = selectCoursesForSemester(
       curriculum,
       simulatedCompleted,
-      slot.year,
-      slot.term,
+      currentSlotYear,
+      currentSlotTerm,
       termUnitCap,
       options.confidenceRatings
     );
 
     if (plannedCourses.length === 0) {
-      // Fallback: if no courses matched the term filter, allow any eligible course
-      const fallbackCourses = remainingCheck.eligibleNowCourses
-        .filter((c) => c.creditBearing && c.units > 0)
-        .slice(0, 6);
-      if (fallbackCourses.length === 0) {
+      emptySlotStreak += 1;
+      if (emptySlotStreak >= 4) {
         break;
-      }
-      for (const fc of fallbackCourses) {
-        simulatedCompleted.add(fc.code);
       }
       continue;
     }
+    emptySlotStreak = 0;
 
     for (const item of plannedCourses) {
       simulatedCompleted.add(item.course.code);
@@ -540,11 +566,11 @@ export function generateAcademicSchedulePlan(
 
     semesters.push({
       semesterIndex: semIdx,
-      year: slot.year,
-      term: slot.term,
-      semesterTitle: formatSemesterTitle(slot.year, slot.term),
+      year: currentSlotYear,
+      term: currentSlotTerm,
+      semesterTitle: formatSemesterTitle(currentSlotYear, currentSlotTerm),
       badgeLabel: `Semester ${semIdx}`,
-      recommendedUnitLimit: slot.term === 'SUMMER' ? 3 : workloadAnalysis.recommendedUnits,
+      recommendedUnitLimit: termUnitCap,
       totalUnits,
       stressScore: termFuzzy.stressScore,
       courses: plannedCourses,
@@ -561,9 +587,12 @@ export function generateAcademicSchedulePlan(
 
   const targetYears = options.targetTimelineYears ?? 4;
   const currentYear = options.currentYearLevel ?? 2;
-  const nominalRemainingTerms = Math.max(1, (targetYears - currentYear + 1) * 2);
-  const targetMaxSemesters = targetYears * 2;
-  const isOnTrack = semestersToGraduation <= targetMaxSemesters;
+  const currentTermOffset = (options.currentSemester ?? 'FIRST') === 'SECOND' ? 1 : 2;
+  const nominalRemainingTerms = Math.max(
+    1,
+    (targetYears - currentYear) * 2 + currentTermOffset
+  );
+  const isOnTrack = semestersToGraduation <= nominalRemainingTerms;
 
   const extendedTermReason =
     semestersToGraduation > nominalRemainingTerms || !isOnTrack
@@ -573,6 +602,8 @@ export function generateAcademicSchedulePlan(
       : null;
 
   return {
+    isValidDag: backwardInitial.isValidDag,
+    cycles: backwardInitial.cycles,
     workloadAnalysis,
     nextSemester,
     semesters,
