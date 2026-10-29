@@ -1,98 +1,154 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
+import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import React from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { AnSciPathBadge } from '@/components/anscipath-badge';
+import { BrandTheme, MaxContentWidth } from '@/constants/theme';
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
+const FARM_BACKGROUND = require('@/assets/images/backgrounds/farm-background.png');
+
+/**
+ * Screen 01 — Welcome / Get Started (`01_Welcome_Get_Started.png`)
+ *
+ * Displays the full-bleed agricultural pasture illustration, the centered
+ * AnSciPath circular degree-planning medallion, and the bottom companion card
+ * with the "Get Started ->" CTA leading into Student Setup.
+ */
+export default function WelcomeScreen() {
+  const router = useRouter();
+
+  const handleGetStarted = () => {
+    router.push('/onboarding/student-setup');
+  };
+
   return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
+    <View style={styles.root}>
+      <StatusBar style="dark" />
 
-export default function HomeScreen() {
-  return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
+      <Image
+        source={FARM_BACKGROUND}
+        style={StyleSheet.absoluteFill}
+        contentFit="cover"
+        contentPosition="center"
+        transition={150}
+        accessibilityIgnoresInvertColors
+      />
 
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
+      {/* Deep pasture-green ground anchor at the very bottom matching screenshot */}
+      <View style={styles.bottomGroundTint} pointerEvents="none" />
 
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+        <View style={styles.contentColumn}>
+          {/* Upper-middle medallion placement matching 01_Welcome_Get_Started.png */}
+          <View style={styles.medallionArea}>
+            <AnSciPathBadge />
+          </View>
 
-        {Platform.OS === 'web' && <WebBadge />}
+          {/* Bottom floating CTA card */}
+          <View style={styles.bottomCard}>
+            <Text style={styles.companionText}>
+              Your personalized academic planning companion.
+            </Text>
+
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Get Started"
+              testID="welcome-get-started-button"
+              onPress={handleGetStarted}
+              style={({ pressed }) => [
+                styles.getStartedButton,
+                pressed && styles.getStartedButtonPressed,
+              ]}>
+              <Text style={styles.getStartedLabel}>Get Started</Text>
+              <Text style={styles.getStartedArrow} aria-hidden>
+                →
+              </Text>
+            </Pressable>
+          </View>
+        </View>
       </SafeAreaView>
-    </ThemedView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
+    backgroundColor: '#274C2D',
+  },
+  bottomGroundTint: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '18%',
+    backgroundColor: 'rgba(39, 76, 45, 0.55)',
   },
   safeArea: {
     flex: 1,
-    paddingHorizontal: Spacing.four,
     alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
   },
-  heroSection: {
+  contentColumn: {
+    flex: 1,
+    width: '100%',
+    maxWidth: MaxContentWidth,
+    paddingHorizontal: 24,
+    justifyContent: 'space-between',
+  },
+  medallionArea: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
+    paddingBottom: 56,
   },
-  title: {
+  bottomCard: {
+    width: '100%',
+    backgroundColor: 'rgba(229, 236, 230, 0.95)',
+    borderRadius: 24,
+    paddingHorizontal: 18,
+    paddingTop: 18,
+    paddingBottom: 18,
+    marginBottom: 28,
+    shadowColor: '#0A2412',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 6,
+  },
+  companionText: {
+    fontSize: 13.5,
+    fontWeight: '500',
+    color: '#465B4E',
     textAlign: 'center',
+    marginBottom: 14,
+    letterSpacing: -0.1,
   },
-  code: {
-    textTransform: 'uppercase',
+  getStartedButton: {
+    backgroundColor: BrandTheme.welcomeButtonGreen,
+    height: 54,
+    borderRadius: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
   },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+  getStartedButtonPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.99 }],
+  },
+  getStartedLabel: {
+    color: '#FFFFFF',
+    fontSize: 17,
+    fontWeight: '700',
+    letterSpacing: -0.2,
+  },
+  getStartedArrow: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '600',
+    marginLeft: 10,
   },
 });

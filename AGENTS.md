@@ -1,4 +1,4 @@
-This is an Expo/React Native mobile application. Prioritize mobile-first patterns, performance, and cross-platform compatibility.
+This is an Expo/React Native mobile application (**CourseAdvisor / AnSciPath**) for **BS Agriculture, Major in Animal Science** students (Mindanao State University at Naawan curriculum). Prioritize mobile-first patterns, Android compatibility, offline-first persistence, and algorithmic accuracy.
 
 ## Expo has changed — do not trust your training data
 
@@ -17,16 +17,17 @@ npx expo install <package>  # ALWAYS use instead of npm/yarn/pnpm/bun add — re
 npx expo start              # start the dev server
 npx expo lint               # lint
 npx tsc --noEmit            # typecheck
+npm test                    # run Jest unit & component tests
 npx expo-doctor             # diagnose dependency and config issues
 npx expo install --fix      # fix incompatible package versions
 ```
 
-Run lint and typecheck before declaring any task done.
+Run lint (`npx expo lint`), typecheck (`npx tsc --noEmit`), and unit tests (`npm test`) before declaring any task done.
 
 ## Navigation & Routing
 
-- Use **Expo Router** for all navigation. Routes live in `src/app/` — every file there is a screen, `_layout.tsx` files define navigators. Keep non-route code (components, hooks, utils) outside `src/app/`.
-- Import `Link`, `router`, and `useLocalSearchParams` from `expo-router`.
+- Use **Expo Router** for all navigation. Routes live in `src/app/` — every file there is a screen, `_layout.tsx` files define navigators. Keep non-route code (components, hooks, domain logic, database, utils) outside `src/app/`.
+- Import `Link`, `useRouter`, `router`, and `useLocalSearchParams` from `expo-router`.
 - Docs: https://docs.expo.dev/router/introduction.md
 
 ## Building with EAS
@@ -34,8 +35,30 @@ Run lint and typecheck before declaring any task done.
 Use EAS to build, sign, and submit the app in the cloud (`eas build`, `eas submit`) and to ship over-the-air updates (`eas update`) — no local Xcode or Android Studio required. Run EAS CLI as `bunx eas-cli <command>` in Bun projects, or `npx eas-cli@latest <command>` otherwise; substitute that for bare `eas` in docs examples.
 Docs: https://docs.expo.dev/eas/index.md
 
-## Rules
+## Project-Specific Rules (CourseAdvisor / AnSciPath)
 
-- If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
-- Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
-- Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
+1. **Technology Stack Override:**
+   - Although `docs/SystemArchitecture.pdf` originally described native Kotlin / Jetpack Compose / Room DB, this project is intentionally built with **React Native + Expo + TypeScript + Expo Router + Expo SQLite**.
+   - Preserve 100% of the functional requirements, Clean Architecture separation, offline-first behavior, and algorithms (DAG validation, cycle detection, Backward Chaining, Topological Sorting, Mamdani Fuzzy Inference System, and Schedule Generator).
+2. **Clean Architecture Separation:**
+   - `src/app/` — Screens and navigation layouts only.
+   - `src/components/` — Reusable UI components.
+   - `src/domain/curriculum/` — Official BS Agriculture (Animal Science) curriculum dataset and validators.
+   - `src/domain/algorithms/` — Pure TypeScript algorithm modules (zero UI or database imports).
+   - `src/db/` — Expo SQLite schema, migrations, and parameterized data access repositories.
+   - `src/state/` — Application state context and hooks bridging `src/db/` and `src/domain/` to the UI.
+3. **Academic Data Integrity:**
+   - Never invent course codes, titles, units, prerequisites, or semester availability. All curriculum data must match `docs/AnimalScienceCurriculum.pdf`.
+   - Preserve and surface known source-curriculum anomalies (such as unresolved prerequisite codes `AGF101` and `AGF102` printed in red in the official PDF) rather than silently hiding them.
+   - Never hardcode fake schedule recommendations—always run the actual graph and fuzzy logic engines.
+4. **UI & Asset Discipline:**
+   - Follow the 15 official prototype screens in `docs/ui-screenshots/` (`01_Welcome_Get_Started.png` through `15_Settings.png`).
+   - Implement Completed Courses year tabs in logical order: **1st Year, 2nd Year, 3rd Year, 4th Year**.
+   - Implement **Plan, Courses, Graph, and Settings** as proper bottom navigation tabs (`src/app/(tabs)/`).
+   - Preserve the visible `"AnSciPath"` branding from the UI prototype while keeping `"CourseAdvisor"` internal identity consistent.
+   - Never import full screenshots from `docs/ui-screenshots/` as runtime UI. Keep runtime assets organized under `assets/images/backgrounds/`, `assets/images/illustrations/`, `assets/images/branding/`, `assets/icons/`, and `assets/fonts/`.
+5. **Continuous Native Generation & Verification:**
+   - If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
+   - Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
+   - Prefer recommended Expo modules over third-party libraries, and check your available skills (`.agents/skills/`) before adding dependencies.
+   - Never claim a test or build passed unless the verification command actually ran and succeeded.

@@ -1,18 +1,55 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
+import { DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useColorScheme } from 'react-native';
+import React, { useEffect } from 'react';
+import { Platform } from 'react-native';
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import AppTabs from '@/components/app-tabs';
+import { getDatabase } from '@/db/database';
+import { PlannerProvider } from '@/state/planner-context';
 
-SplashScreen.preventAutoHideAsync();
+SplashScreen.preventAutoHideAsync().catch(() => {
+  // Ignore if splash screen was already hidden in test environments
+});
 
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
+export default function RootLayout() {
+  useEffect(() => {
+    let mounted = true;
+
+    async function bootstrap() {
+      try {
+        if (Platform.OS !== 'web') {
+          await getDatabase();
+        }
+      } catch (error) {
+        console.warn('[CourseAdvisor] SQLite bootstrap warning:', error);
+      } finally {
+        if (mounted) {
+          SplashScreen.hideAsync().catch(() => {});
+        }
+      }
+    }
+
+    bootstrap();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
-      <AppTabs />
+    <ThemeProvider value={DefaultTheme}>
+      <PlannerProvider>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="index" />
+          <Stack.Screen name="onboarding/student-setup" />
+          <Stack.Screen name="onboarding/academic-goal" />
+          <Stack.Screen name="onboarding/completed-courses" />
+          <Stack.Screen name="onboarding/confidence-rating" />
+          <Stack.Screen name="onboarding/analyzing" />
+          <Stack.Screen name="onboarding/workload-analysis" />
+          <Stack.Screen name="onboarding/recommended-schedule" />
+          <Stack.Screen name="(tabs)" />
+        </Stack>
+      </PlannerProvider>
     </ThemeProvider>
   );
 }
